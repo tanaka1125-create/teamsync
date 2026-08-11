@@ -22,6 +22,16 @@
   const submitResponseLabel = document.querySelector("#submit-response-button-label");
   const submitResponseSpinner = submitResponseButton.querySelector(".button-spinner");
   const responseNotice = document.querySelector("#response-notice");
+  const resultsParticipantCount = document.querySelector("#results-participant-count");
+  const refreshResultsButton = document.querySelector("#refresh-results-button");
+  const resultsLoadingState = document.querySelector("#results-loading");
+  const resultsErrorState = document.querySelector("#results-error");
+  const resultsEmptyState = document.querySelector("#results-empty");
+  const resultsContent = document.querySelector("#results-content");
+  const candidateSummaryList = document.querySelector("#candidate-summary-list");
+  const resultsTableHead = document.querySelector("#results-table-head");
+  const resultsTableBody = document.querySelector("#results-table-body");
+  const resultsTableFoot = document.querySelector("#results-table-foot");
   const UUID_PATTERN =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const STATUS_OPTIONS = [
@@ -30,9 +40,11 @@
     { value: "no", symbol: "×", label: "不参加" },
   ];
   let currentEventId = "";
+  let currentEventDates = [];
+  let isLoadingResults = false;
 
   document.documentElement.dataset.teamsyncPhase = String(
-    window.TeamSyncConfig?.phase ?? 6,
+    window.TeamSyncConfig?.phase ?? 7,
   );
 
   function getCanonicalEventUrl(eventId) {
@@ -52,6 +64,20 @@
     return new Intl.DateTimeFormat("ja-JP", {
       year: "numeric",
       month: "long",
+      day: "numeric",
+      weekday: "short",
+    }).format(date);
+  }
+
+  function formatCompactEventDate(dateString) {
+    const date = new Date(`${dateString}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+      return dateString;
+    }
+
+    return new Intl.DateTimeFormat("ja-JP", {
+      month: "numeric",
       day: "numeric",
       weekday: "short",
     }).format(date);
@@ -187,6 +213,7 @@
   function renderEvent(eventData) {
     const url = getCanonicalEventUrl(eventData.id);
     currentEventId = eventData.id;
+    currentEventDates = eventData.dates;
 
     title.textContent = eventData.title;
     description.textContent = eventData.description || "説明はありません。";
@@ -204,6 +231,200 @@
     loadingState.hidden = true;
     errorState.hidden = true;
     content.hidden = false;
+  }
+
+  function createCountBadge(symbol, label, count, status) {
+    const badge = document.createElement("span");
+    badge.className = `result-count-badge is-${status}`;
+
+    const mark = document.createElement("strong");
+    mark.textContent = symbol;
+
+    const text = document.createElement("span");
+    text.textContent = `${label} ${count}`;
+
+    badge.append(mark, text);
+    return badge;
+  }
+
+  function renderCandidateSummaries(results) {
+    const countByDateId = new Map(
+      results.counts.map((count) => [count.eventDateId, count]),
+    );
+
+    candidateSummaryList.replaceChildren();
+    currentEventDates.forEach((candidate, index) => {
+      const count = countByDateId.get(candidate.id) ?? {
+        yesCount: 0,
+        maybeCount: 0,
+        noCount: 0,
+        unansweredCount: results.participantCount,
+      };
+      const card = document.createElement("article");
+      card.className = "candidate-summary-card";
+
+      const heading = document.createElement("div");
+      heading.className = "candidate-summary-heading";
+
+      const number = document.createElement("span");
+      number.className = "candidate-summary-index";
+      number.textContent = String(index + 1).padStart(2, "0");
+
+      const detail = document.createElement("div");
+      const date = document.createElement("strong");
+      date.textContent = formatEventDate(candidate.eventDate);
+      const time = document.createElement("span");
+      time.textContent = `${candidate.startTime} 〜 ${candidate.endTime}`;
+      detail.append(date, time);
+      heading.append(number, detail);
+
+      const totals = document.createElement("div");
+      totals.className = "candidate-summary-counts";
+      totals.append(
+        createCountBadge("○", "参加", count.yesCount, "yes"),
+        createCountBadge("△", "未定", count.maybeCount, "maybe"),
+        createCountBadge("×", "不参加", count.noCount, "no"),
+        createCountBadge("—", "未回答", count.unansweredCount, "unanswered"),
+      );
+
+      card.append(heading, totals);
+      candidateSummaryList.append(card);
+    });
+  }
+
+  function createResultStatus(response) {
+    const wrapper = document.createElement("div");
+    const option = STATUS_OPTIONS.find((item) => item.value === response?.status);
+
+    if (!option) {
+      wrapper.className = "result-status is-unanswered";
+      wrapper.textContent = "未回答";
+      return wrapper;
+    }
+
+    wrapper.className = `result-status is-${option.value}`;
+    const status = document.createElement("span");
+    status.className = "result-status-label";
+    status.textContent = `${option.symbol} ${option.label}`;
+    wrapper.append(status);
+
+    if (response.comment) {
+      const comment = document.createElement("p");
+      comment.className = "result-comment";
+      comment.textContent = response.comment;
+      wrapper.append(comment);
+    }
+
+    return wrapper;
+  }
+
+  function renderResultsTable(results) {
+    const headingRow = document.createElement("tr");
+    const participantHeading = document.createElement("th");
+    participantHeading.scope = "col";
+    participantHeading.textContent = "回答者";
+    headingRow.append(participantHeading);
+
+    currentEventDates.forEach((candidate) => {
+      const heading = document.createElement("th");
+      heading.scope = "col";
+      const date = document.createElement("strong");
+      date.textContent = formatCompactEventDate(candidate.eventDate);
+      const time = document.createElement("span");
+      time.textContent = `${candidate.startTime}〜${candidate.endTime}`;
+      heading.append(date, time);
+      headingRow.append(heading);
+    });
+    resultsTableHead.replaceChildren(headingRow);
+
+    resultsTableBody.replaceChildren();
+    results.participants.forEach((participant) => {
+      const row = document.createElement("tr");
+      const name = document.createElement("th");
+      name.scope = "row";
+      name.textContent = participant.name;
+      row.append(name);
+
+      const responseByDateId = new Map(
+        (participant.responses ?? []).map((response) => [response.eventDateId, response]),
+      );
+      currentEventDates.forEach((candidate) => {
+        const cell = document.createElement("td");
+        cell.append(createResultStatus(responseByDateId.get(candidate.id)));
+        row.append(cell);
+      });
+      resultsTableBody.append(row);
+    });
+
+    const countByDateId = new Map(
+      results.counts.map((count) => [count.eventDateId, count]),
+    );
+    const totalRow = document.createElement("tr");
+    const totalHeading = document.createElement("th");
+    totalHeading.scope = "row";
+    totalHeading.textContent = "集計";
+    totalRow.append(totalHeading);
+    currentEventDates.forEach((candidate) => {
+      const count = countByDateId.get(candidate.id) ?? {
+        yesCount: 0,
+        maybeCount: 0,
+        noCount: 0,
+        unansweredCount: results.participantCount,
+      };
+      const cell = document.createElement("td");
+      cell.className = "results-total-cell";
+      cell.textContent = `○${count.yesCount} △${count.maybeCount} ×${count.noCount} 未${count.unansweredCount}`;
+      totalRow.append(cell);
+    });
+    resultsTableFoot.replaceChildren(totalRow);
+  }
+
+  function renderResults(results) {
+    resultsParticipantCount.textContent = `${results.participantCount}人が回答`;
+    resultsLoadingState.hidden = true;
+    resultsErrorState.hidden = true;
+
+    if (results.participantCount === 0) {
+      resultsContent.hidden = true;
+      resultsEmptyState.hidden = false;
+      return;
+    }
+
+    renderCandidateSummaries(results);
+    renderResultsTable(results);
+    resultsEmptyState.hidden = true;
+    resultsContent.hidden = false;
+  }
+
+  async function loadResults() {
+    if (!currentEventId || isLoadingResults) {
+      return;
+    }
+
+    isLoadingResults = true;
+    refreshResultsButton.disabled = true;
+    refreshResultsButton.setAttribute("aria-busy", "true");
+    resultsLoadingState.hidden = false;
+    resultsErrorState.hidden = true;
+
+    try {
+      const results = await window.TeamSyncApi.getEventResults(currentEventId);
+
+      if (!results) {
+        throw new Error("results not found");
+      }
+
+      renderResults(results);
+    } catch {
+      resultsLoadingState.hidden = true;
+      resultsEmptyState.hidden = true;
+      resultsContent.hidden = true;
+      resultsErrorState.hidden = false;
+    } finally {
+      isLoadingResults = false;
+      refreshResultsButton.disabled = false;
+      refreshResultsButton.setAttribute("aria-busy", "false");
+    }
   }
 
   async function copyEventUrl() {
@@ -307,6 +528,7 @@
       }
 
       renderEvent(eventData);
+      await loadResults();
     } catch {
       showError("イベントを読み込めませんでした。時間をおいてもう一度お試しください。");
     }
@@ -355,6 +577,7 @@
         `${savedName}さんの回答を${result.savedCount}件保存しました。同じ名前で再回答すると、選択した候補を更新できます。`,
         "success",
       );
+      await loadResults();
     } catch (error) {
       showResponseNotice(getResponseErrorMessage(error), "error");
     } finally {
@@ -363,5 +586,6 @@
   });
 
   copyButton.addEventListener("click", copyEventUrl);
+  refreshResultsButton.addEventListener("click", loadResults);
   loadEvent();
 })();

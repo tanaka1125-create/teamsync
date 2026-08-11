@@ -153,6 +153,30 @@
     return eventData;
   }
 
+  async function getEventResults(eventId) {
+    const results = await callRpc("get_event_results", {
+      p_event_id: eventId,
+    });
+
+    if (results === null) {
+      return null;
+    }
+
+    if (
+      typeof results !== "object" ||
+      typeof results.participantCount !== "number" ||
+      !Array.isArray(results.counts) ||
+      !Array.isArray(results.participants)
+    ) {
+      throw createApiError(
+        "INVALID_RESPONSE",
+        "Supabaseから回答結果を取得できませんでした。",
+      );
+    }
+
+    return results;
+  }
+
   async function submitResponses(responseData) {
     const result = await callRpc("submit_event_responses", {
       p_event_id: responseData.eventId,
@@ -182,6 +206,7 @@
     isConfigured,
     createEvent,
     getEvent,
+    getEventResults,
     submitResponses,
   });
 })();
