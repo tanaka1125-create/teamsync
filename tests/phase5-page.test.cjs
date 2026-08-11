@@ -24,6 +24,13 @@ const createScript = fs.readFileSync(
   'src="js/supabase.js?v=7"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
 
+const indexHtml = fs.readFileSync(path.join(projectRoot, "index.html"), "utf8");
+[
+  "SCHEDULE TOGETHER",
+  "みんなの予定を、ひとつに。",
+  "候補日時を選んで共有するだけ。",
+].forEach((removedText) => assert.equal(indexHtml.includes(removedText), false));
+
 assert.match(eventScript, /URLSearchParams\(window\.location\.search\)/);
 assert.match(eventScript, /TeamSyncApi\.getEvent\(eventId\)/);
 assert.match(eventScript, /navigator\.clipboard/);
