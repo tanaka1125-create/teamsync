@@ -714,6 +714,65 @@ input[aria-invalid="true"]:focus {
   font-size: 0.78rem;
 }
 
+.backend-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-muted);
+  background: #f8fafc;
+}
+
+.backend-status-indicator {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: #98a2b3;
+  box-shadow: 0 0 0 4px rgba(152, 162, 179, 0.13);
+}
+
+.backend-status strong,
+.backend-status span:not(.backend-status-indicator) {
+  display: block;
+}
+
+.backend-status strong {
+  color: var(--color-text);
+  font-size: 0.8rem;
+}
+
+.backend-status span:not(.backend-status-indicator) {
+  margin-top: 1px;
+  font-size: 0.72rem;
+}
+
+.backend-status.is-ready {
+  border-color: #b7dfca;
+  color: #397257;
+  background: #f2fbf6;
+}
+
+.backend-status.is-ready .backend-status-indicator {
+  background: #25a166;
+  box-shadow: 0 0 0 4px rgba(37, 161, 102, 0.13);
+}
+
+.backend-status.is-missing {
+  border-color: #f0d5a7;
+  color: #886222;
+  background: #fffaf0;
+}
+
+.backend-status.is-missing .backend-status-indicator {
+  background: #d99a2b;
+  box-shadow: 0 0 0 4px rgba(217, 154, 43, 0.13);
+}
+
 .primary-button,
 .secondary-button {
   display: inline-flex;
@@ -750,11 +809,33 @@ input[aria-invalid="true"]:focus {
   stroke-width: 2;
 }
 
-.primary-button:hover {
+.primary-button:hover:not(:disabled) {
   border-color: var(--color-primary-dark);
   background: var(--color-primary-dark);
   box-shadow: 0 10px 22px rgba(37, 99, 235, 0.25);
   transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+  border-color: #7ba1ee;
+  background: #7ba1ee;
+  box-shadow: none;
+  cursor: wait;
+}
+
+.button-spinner {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: button-spin 700ms linear infinite;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .primary-button:active,
@@ -790,6 +871,16 @@ input[aria-invalid="true"]:focus {
   background: var(--color-primary-soft);
   font-size: 0.82rem;
   text-align: center;
+}
+
+.phase-notice.is-success {
+  color: #256947;
+  background: #edf9f2;
+}
+
+.phase-notice.is-error {
+  color: #9f332b;
+  background: #fff1f0;
 }
 
 .empty-state {
@@ -919,5 +1010,9 @@ input[aria-invalid="true"]:focus {
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .button-spinner {
+    animation-duration: 1.5s;
   }
 }
