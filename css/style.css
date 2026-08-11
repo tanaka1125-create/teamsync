@@ -1617,7 +1617,8 @@ input[aria-invalid="true"]:focus {
   min-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.74rem;
+  font-size: 0.86rem;
+  line-height: 1.45;
 }
 
 .results-table caption {
@@ -1633,7 +1634,7 @@ input[aria-invalid="true"]:focus {
 .results-table th,
 .results-table td {
   min-width: 150px;
-  padding: 12px;
+  padding: 14px;
   border-right: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
   text-align: left;
@@ -1645,8 +1646,8 @@ input[aria-invalid="true"]:focus {
   position: sticky;
   left: 0;
   z-index: 1;
-  min-width: 132px;
-  max-width: 180px;
+  min-width: 156px;
+  max-width: 210px;
   background: #fff;
 }
 
@@ -1669,7 +1670,7 @@ input[aria-invalid="true"]:focus {
 .results-table thead th span {
   margin-top: 2px;
   color: var(--color-muted);
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   font-weight: 650;
 }
 
@@ -1702,6 +1703,51 @@ input[aria-invalid="true"]:focus {
   outline-offset: 2px;
 }
 
+.result-participant-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.result-delete-button {
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid #efb4ae;
+  border-radius: 7px;
+  color: #a23830;
+  background: #fff7f6;
+  font-size: 0.72rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.result-delete-button:hover:not(:disabled) {
+  border-color: #d8645b;
+  color: #8f2f28;
+  background: #ffefed;
+}
+
+.result-delete-button.is-confirming {
+  border-color: #c9433a;
+  color: #fff;
+  background: #c9433a;
+}
+
+.result-delete-button:focus-visible {
+  outline: 3px solid rgba(216, 100, 91, 0.2);
+  outline-offset: 2px;
+}
+
+.result-delete-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.results-action-notice {
+  margin: 0 0 16px;
+}
+
 .result-status {
   color: #98a2b3;
 }
@@ -1710,7 +1756,7 @@ input[aria-invalid="true"]:focus {
   display: inline-flex;
   padding: 4px 8px;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 800;
 }
 
@@ -1733,8 +1779,8 @@ input[aria-invalid="true"]:focus {
   max-width: 210px;
   margin: 7px 0 0;
   color: #475467;
-  font-size: 0.68rem;
-  line-height: 1.55;
+  font-size: 0.78rem;
+  line-height: 1.65;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
