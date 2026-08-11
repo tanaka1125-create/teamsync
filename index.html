@@ -8,7 +8,7 @@
       content="TeamSyncは、ゲームチーム向けのシンプルな日程調整ツールです。"
     />
     <title>イベントを作成 | TeamSync</title>
-    <link rel="stylesheet" href="css/style.css?v=7" />
+    <link rel="stylesheet" href="css/style.css?v=8" />
   </head>
   <body>
     <header class="site-header">
@@ -132,6 +132,44 @@
                 </div>
                 <span class="candidate-count" id="candidate-count" aria-live="polite">0件</span>
               </div>
+
+              <section class="bulk-time-panel" aria-labelledby="bulk-time-title">
+                <div class="bulk-time-heading">
+                  <div>
+                    <h4 id="bulk-time-title">時間を一括設定</h4>
+                    <p>選択中のすべての候補日時へ同じ時間を反映します</p>
+                  </div>
+                  <span class="bulk-time-badge">一括</span>
+                </div>
+                <div class="bulk-time-controls">
+                  <label class="time-field" for="bulk-start-time">
+                    <span>開始</span>
+                    <select
+                      class="time-select"
+                      id="bulk-start-time"
+                      aria-describedby="bulk-time-message"
+                      disabled
+                    ></select>
+                  </label>
+                  <span class="time-separator" aria-hidden="true">〜</span>
+                  <label class="time-field" for="bulk-end-time">
+                    <span>終了</span>
+                    <select
+                      class="time-select"
+                      id="bulk-end-time"
+                      aria-describedby="bulk-time-message"
+                      disabled
+                    ></select>
+                  </label>
+                  <button class="bulk-time-button" id="apply-bulk-time" type="button" disabled>
+                    全候補に反映
+                  </button>
+                </div>
+                <p class="bulk-time-message" id="bulk-time-message" aria-live="polite">
+                  候補日を選択すると一括設定できます。
+                </p>
+              </section>
+
               <div class="candidate-empty" id="candidate-empty">
                 カレンダーから候補日を選ぶと、ここで時間を設定できます。
               </div>
@@ -177,7 +215,7 @@
     </footer>
 
     <script src="js/config.js?v=7" defer></script>
-    <script src="js/calendar.js?v=7" defer></script>
+    <script src="js/calendar.js?v=8" defer></script>
     <script src="js/supabase.js?v=7" defer></script>
     <script src="js/create-event.js?v=7" defer></script>
   </body>
