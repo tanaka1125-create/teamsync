@@ -5,6 +5,6 @@
  * Never commit a Supabase service-role key to this repository.
  */
 window.TeamSyncConfig = Object.freeze({
-  phase: 1,
+  phase: 2,
   supabaseEnabled: false,
 });
