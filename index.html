@@ -74,22 +74,68 @@
             </div>
           </div>
 
-          <fieldset class="form-group schedule-placeholder" aria-describedby="schedule-note">
+          <fieldset class="form-group schedule-field" aria-describedby="schedule-note schedule-error">
             <legend>候補日時 <span class="required">*</span></legend>
-            <div class="placeholder-content">
-              <span class="calendar-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img">
-                  <path d="M7 2v3M17 2v3M3.5 9h17M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-                  <path d="M8 13h3v3H8z" />
-                </svg>
-              </span>
-              <div>
-                <p class="placeholder-title">カレンダーは次のフェーズで実装します</p>
-                <p id="schedule-note" class="placeholder-copy">
-                  複数の日付と30分単位の時間を選べるようになる予定です。
-                </p>
+            <div class="calendar" id="calendar" data-calendar>
+              <div class="calendar-header">
+                <button
+                  class="calendar-nav-button"
+                  id="calendar-previous"
+                  type="button"
+                  aria-label="前の月を表示"
+                >
+                  <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="m12.5 4-6 6 6 6" />
+                  </svg>
+                </button>
+                <p class="calendar-month" id="calendar-month" aria-live="polite"></p>
+                <button
+                  class="calendar-nav-button"
+                  id="calendar-next"
+                  type="button"
+                  aria-label="次の月を表示"
+                >
+                  <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="m7.5 4 6 6-6 6" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="calendar-weekdays" aria-hidden="true">
+                <span class="is-sunday">日</span>
+                <span>月</span>
+                <span>火</span>
+                <span>水</span>
+                <span>木</span>
+                <span>金</span>
+                <span class="is-saturday">土</span>
+              </div>
+
+              <div
+                class="calendar-grid"
+                id="calendar-grid"
+                role="group"
+                aria-labelledby="calendar-month"
+              ></div>
+
+              <div class="calendar-selection" id="calendar-selection">
+                <span class="calendar-selection-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M7 2v3M17 2v3M3.5 9h17M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+                    <path d="m8 15 2.2 2.2L16.5 11" />
+                  </svg>
+                </span>
+                <div>
+                  <span class="calendar-selection-label">選択中の日付</span>
+                  <strong id="selected-date-label">日付を選択してください</strong>
+                </div>
               </div>
             </div>
+            <input id="selected-date" name="date" type="hidden" />
+            <p id="schedule-note" class="field-hint schedule-hint">
+              Phase 2では1日選択できます。複数候補と時刻は次のフェーズで追加します。
+            </p>
+            <p id="schedule-error" class="field-error" aria-live="polite"></p>
           </fieldset>
 
           <button class="primary-button" type="submit">
