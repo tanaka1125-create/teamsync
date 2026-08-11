@@ -1,4 +1,4 @@
--- TeamSync Phase 5 schema
+-- TeamSync Phase 6 schema
 -- Run this entire file once in Supabase Dashboard > SQL Editor.
 
 create extension if not exists pgcrypto;
@@ -24,12 +24,42 @@ create table if not exists public.event_dates (
 create index if not exists event_dates_event_id_idx
   on public.event_dates(event_id);
 
+create table if not exists public.participants (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null references public.events(id) on delete cascade,
+  name text not null check (char_length(btrim(name)) between 1 and 40),
+  name_key text generated always as (lower(btrim(name))) stored,
+  created_at timestamptz not null default now(),
+  constraint participants_unique_name unique (event_id, name_key)
+);
+
+create table if not exists public.responses (
+  id uuid primary key default gen_random_uuid(),
+  participant_id uuid not null references public.participants(id) on delete cascade,
+  event_date_id uuid not null references public.event_dates(id) on delete cascade,
+  status text not null check (status in ('yes', 'maybe', 'no')),
+  comment text check (comment is null or char_length(comment) <= 200),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint responses_unique_candidate unique (participant_id, event_date_id)
+);
+
+create index if not exists participants_event_id_idx
+  on public.participants(event_id);
+
+create index if not exists responses_event_date_id_idx
+  on public.responses(event_date_id);
+
 alter table public.events enable row level security;
 alter table public.event_dates enable row level security;
+alter table public.participants enable row level security;
+alter table public.responses enable row level security;
 
 -- The browser never writes tables directly. It can only call the validated RPC below.
 revoke all on table public.events from anon, authenticated;
 revoke all on table public.event_dates from anon, authenticated;
+revoke all on table public.participants from anon, authenticated;
+revoke all on table public.responses from anon, authenticated;
 
 create or replace function public.create_event_with_dates(
   p_title text,
@@ -162,3 +192,115 @@ grant execute on function public.get_event_details(uuid) to anon;
 
 comment on function public.get_event_details(uuid) is
   'Returns the public TeamSync event fields for a URL-scoped event ID.';
+
+create or replace function public.submit_event_responses(
+  p_event_id uuid,
+  p_name text,
+  p_responses jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  saved_participant_id uuid;
+  saved_response_count integer;
+begin
+  if not exists (
+    select 1
+    from public.events as event
+    where event.id = p_event_id
+  ) then
+    raise exception 'イベントが見つかりません。';
+  end if;
+
+  if p_name is null or char_length(btrim(p_name)) not between 1 and 40 then
+    raise exception '名前は1〜40文字で入力してください。';
+  end if;
+
+  if p_responses is null or jsonb_typeof(p_responses) <> 'array' then
+    raise exception '回答の形式が正しくありません。';
+  end if;
+
+  if jsonb_array_length(p_responses) not between 1 and 10 then
+    raise exception '回答は1〜10件で指定してください。';
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_to_recordset(p_responses) as item(
+      event_date_id text,
+      status text,
+      comment text
+    )
+    where item.event_date_id is null
+       or item.event_date_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+       or item.status is null
+       or item.status not in ('yes', 'maybe', 'no')
+       or char_length(coalesce(item.comment, '')) > 200
+  ) then
+    raise exception '回答の内容が正しくありません。';
+  end if;
+
+  if (
+    select count(distinct item.event_date_id)
+    from jsonb_to_recordset(p_responses) as item(event_date_id text)
+  ) <> jsonb_array_length(p_responses) then
+    raise exception '同じ候補日時へ重複して回答できません。';
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_to_recordset(p_responses) as item(event_date_id text)
+    left join public.event_dates as candidate
+      on candidate.id = item.event_date_id::uuid
+     and candidate.event_id = p_event_id
+    where candidate.id is null
+  ) then
+    raise exception 'イベントに含まれない候補日時には回答できません。';
+  end if;
+
+  insert into public.participants (event_id, name)
+  values (p_event_id, btrim(p_name))
+  on conflict (event_id, name_key)
+  do update set name = excluded.name
+  returning id into saved_participant_id;
+
+  insert into public.responses (
+    participant_id,
+    event_date_id,
+    status,
+    comment
+  )
+  select
+    saved_participant_id,
+    item.event_date_id::uuid,
+    item.status,
+    nullif(btrim(coalesce(item.comment, '')), '')
+  from jsonb_to_recordset(p_responses) as item(
+    event_date_id text,
+    status text,
+    comment text
+  )
+  on conflict (participant_id, event_date_id)
+  do update set
+    status = excluded.status,
+    comment = excluded.comment,
+    updated_at = now();
+
+  get diagnostics saved_response_count = row_count;
+
+  return jsonb_build_object(
+    'participantId', saved_participant_id,
+    'savedCount', saved_response_count
+  );
+end;
+$$;
+
+revoke all on function public.submit_event_responses(uuid, text, jsonb)
+  from public, authenticated;
+grant execute on function public.submit_event_responses(uuid, text, jsonb) to anon;
+
+comment on function public.submit_event_responses(uuid, text, jsonb) is
+  'Creates or updates the selected TeamSync responses for a participant name.';
