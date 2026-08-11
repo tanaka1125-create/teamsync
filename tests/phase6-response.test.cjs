@@ -20,7 +20,7 @@ const schema = fs.readFileSync(
   'id="submit-response-button"',
   'id="response-notice"',
   'maxlength="40"',
-  'src="js/event.js?v=6"',
+  'src="js/event.js?v=7"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
 
 assert.match(eventScript, /value: "yes", symbol: "○", label: "参加"/);

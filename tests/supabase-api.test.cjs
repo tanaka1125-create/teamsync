@@ -135,6 +135,80 @@ async function testMissingEvent() {
   );
 }
 
+async function testSuccessfulResultsRead() {
+  let capturedRequest;
+  const api = loadApi(
+    {
+      supabaseUrl: "https://example.supabase.co/",
+      supabasePublicKey: "sb_publishable_example",
+    },
+    async (url, options) => {
+      capturedRequest = { url, options };
+      return {
+        ok: true,
+        json: async () => ({
+          participantCount: 2,
+          counts: [
+            {
+              eventDateId: "22222222-2222-4222-8222-222222222222",
+              yesCount: 1,
+              maybeCount: 0,
+              noCount: 0,
+              unansweredCount: 1,
+            },
+          ],
+          participants: [
+            {
+              id: "33333333-3333-4333-8333-333333333333",
+              name: "たなか",
+              responses: [
+                {
+                  eventDateId: "22222222-2222-4222-8222-222222222222",
+                  status: "yes",
+                  comment: "参加できます",
+                },
+              ],
+            },
+          ],
+        }),
+      };
+    },
+  );
+
+  const results = await api.getEventResults(
+    "11111111-1111-4111-8111-111111111111",
+  );
+
+  assert.equal(results.participantCount, 2);
+  assert.equal(results.counts[0].yesCount, 1);
+  assert.equal(results.participants[0].responses[0].comment, "参加できます");
+  assert.equal(
+    capturedRequest.url,
+    "https://example.supabase.co/rest/v1/rpc/get_event_results",
+  );
+  assert.deepEqual(JSON.parse(capturedRequest.options.body), {
+    p_event_id: "11111111-1111-4111-8111-111111111111",
+  });
+}
+
+async function testInvalidResultsRead() {
+  const api = loadApi(
+    {
+      supabaseUrl: "https://example.supabase.co",
+      supabasePublicKey: "sb_publishable_example",
+    },
+    async () => ({
+      ok: true,
+      json: async () => ({ participantCount: "2", counts: [], participants: [] }),
+    }),
+  );
+
+  await assert.rejects(
+    () => api.getEventResults("11111111-1111-4111-8111-111111111111"),
+    (error) => error.code === "INVALID_RESPONSE",
+  );
+}
+
 async function testSuccessfulResponseSubmit() {
   let capturedRequest;
   const api = loadApi(
@@ -312,6 +386,11 @@ function testSchemaGuards() {
     /grant execute on function public\.create_event_with_dates/,
     /create or replace function public\.get_event_details/,
     /grant execute on function public\.get_event_details\(uuid\) to anon/,
+    /create or replace function public\.get_event_results/,
+    /grant execute on function public\.get_event_results\(uuid\) to anon/,
+    /'participantCount'/,
+    /'unansweredCount'/,
+    /count\(\*\) filter \(where response\.status = 'yes'\)/,
     /create or replace function public\.submit_event_responses/,
     /grant execute on function public\.submit_event_responses\(uuid, text, jsonb\) to anon/,
     /constraint participants_unique_name unique \(event_id, name_key\)/,
@@ -332,6 +411,8 @@ async function main() {
   await testSuccessfulCreate();
   await testSuccessfulRead();
   await testMissingEvent();
+  await testSuccessfulResultsRead();
+  await testInvalidResultsRead();
   await testSuccessfulResponseSubmit();
   await testInvalidResponseSubmitResult();
   await testMissingConfiguration();
