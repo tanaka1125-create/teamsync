@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="TeamSyncのイベント専用ページです。" />
     <title>イベント | TeamSync</title>
-    <link rel="stylesheet" href="css/style.css?v=6" />
+    <link rel="stylesheet" href="css/style.css?v=7" />
   </head>
   <body>
     <header class="site-header">
@@ -115,6 +115,52 @@
           </form>
         </section>
 
+        <section class="card event-results" aria-labelledby="event-results-title">
+          <div class="event-section-heading results-heading">
+            <div>
+              <p class="step-label">RESULTS</p>
+              <h2 id="event-results-title">回答一覧</h2>
+            </div>
+            <div class="results-heading-actions">
+              <p id="results-participant-count">0人が回答</p>
+              <button id="refresh-results-button" class="refresh-results-button" type="button">
+                結果を更新
+              </button>
+            </div>
+          </div>
+
+          <div id="results-loading" class="results-state" role="status" aria-live="polite">
+            <span class="event-loader" aria-hidden="true"></span>
+            <p>回答結果を読み込んでいます…</p>
+          </div>
+
+          <div id="results-error" class="results-state results-state--error" role="status" hidden>
+            <p>回答結果を読み込めませんでした。「結果を更新」をお試しください。</p>
+          </div>
+
+          <div id="results-empty" class="results-empty" hidden>
+            <strong>まだ回答はありません</strong>
+            <p>最初の回答が保存されると、候補別の集計と回答一覧が表示されます。</p>
+          </div>
+
+          <div id="results-content" hidden>
+            <div
+              id="candidate-summary-list"
+              class="candidate-summary-list"
+              aria-label="候補日時ごとの回答集計"
+            ></div>
+
+            <div class="results-table-scroll" tabindex="0" aria-label="参加者ごとの回答一覧">
+              <table class="results-table">
+                <caption>参加者ごとの○・△・×とコメント</caption>
+                <thead id="results-table-head"></thead>
+                <tbody id="results-table-body"></tbody>
+                <tfoot id="results-table-foot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <div class="event-page-actions">
           <a class="secondary-button" href="index.html">新しいイベントを作成</a>
         </div>
@@ -125,8 +171,8 @@
       <p>TeamSync <span aria-hidden="true">·</span> チームの日程調整をシンプルに</p>
     </footer>
 
-    <script src="js/config.js?v=6" defer></script>
-    <script src="js/supabase.js?v=6" defer></script>
-    <script src="js/event.js?v=6" defer></script>
+    <script src="js/config.js?v=7" defer></script>
+    <script src="js/supabase.js?v=7" defer></script>
+    <script src="js/event.js?v=7" defer></script>
   </body>
 </html>
