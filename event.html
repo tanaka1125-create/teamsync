@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="TeamSyncのイベント専用ページです。" />
     <title>イベント | TeamSync</title>
-    <link rel="stylesheet" href="css/style.css?v=11" />
+    <link rel="stylesheet" href="css/style.css?v=13" />
   </head>
   <body>
     <header class="site-header">
@@ -98,6 +98,14 @@
             <p>回答結果を読み込めませんでした。「結果を更新」をお試しください。</p>
           </div>
 
+          <p
+            id="results-action-notice"
+            class="phase-notice results-action-notice"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></p>
+
           <div id="results-empty" class="results-empty" hidden>
             <strong>まだ回答はありません</strong>
             <p>最初の回答が保存されると、候補別の集計と回答一覧が表示されます。</p>
@@ -131,7 +139,7 @@
     </footer>
 
     <script src="js/config.js?v=7" defer></script>
-    <script src="js/supabase.js?v=8" defer></script>
-    <script src="js/event.js?v=11" defer></script>
+    <script src="js/supabase.js?v=9" defer></script>
+    <script src="js/event.js?v=13" defer></script>
   </body>
 </html>
