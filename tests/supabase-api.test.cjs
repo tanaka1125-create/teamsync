@@ -343,6 +343,41 @@ async function testSuccessfulResponseUpdate() {
   });
 }
 
+async function testSuccessfulParticipantDelete() {
+  let capturedRequest;
+  const api = loadApi(
+    {
+      supabaseUrl: "https://example.supabase.co/",
+      supabasePublicKey: "sb_publishable_example",
+    },
+    async (url, options) => {
+      capturedRequest = { url, options };
+      return {
+        ok: true,
+        json: async () => ({
+          participantId: "33333333-3333-4333-8333-333333333333",
+          deleted: true,
+        }),
+      };
+    },
+  );
+
+  const result = await api.deleteParticipant({
+    eventId: "11111111-1111-4111-8111-111111111111",
+    participantId: "33333333-3333-4333-8333-333333333333",
+  });
+
+  assert.equal(result.deleted, true);
+  assert.equal(
+    capturedRequest.url,
+    "https://example.supabase.co/rest/v1/rpc/delete_event_participant",
+  );
+  assert.deepEqual(JSON.parse(capturedRequest.options.body), {
+    p_event_id: "11111111-1111-4111-8111-111111111111",
+    p_participant_id: "33333333-3333-4333-8333-333333333333",
+  });
+}
+
 async function testDuplicateParticipantError() {
   const api = loadApi(
     {
@@ -474,6 +509,9 @@ function testSchemaGuards() {
     /raise exception 'PARTICIPANT_NAME_EXISTS'/,
     /create or replace function public\.update_event_responses/,
     /grant execute on function public\.update_event_responses\(uuid, uuid, jsonb\) to anon/,
+    /create or replace function public\.delete_event_participant/,
+    /grant execute on function public\.delete_event_participant\(uuid, uuid\) to anon/,
+    /delete from public\.participants/,
     /delete from public\.responses/,
     /constraint participants_unique_name unique \(event_id, name_key\)/,
     /constraint responses_unique_candidate unique \(participant_id, event_date_id\)/,
@@ -497,6 +535,7 @@ async function main() {
   await testSuccessfulResponseSubmit();
   await testInvalidResponseSubmitResult();
   await testSuccessfulResponseUpdate();
+  await testSuccessfulParticipantDelete();
   await testDuplicateParticipantError();
   await testMissingConfiguration();
   await testSupabaseError();

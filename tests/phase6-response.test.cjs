@@ -25,7 +25,7 @@ const schema = fs.readFileSync(
   'id="response-mode-hint"',
   'maxlength="40"',
   'id="back-to-results-link"',
-  'src="js/event.js?v=11"',
+  'src="js/event.js?v=13"',
 ].forEach((requiredMarkup) => assert.ok(responseHtml.includes(requiredMarkup)));
 
 assert.equal(responseHtml.includes("同じ名前で再回答すると"), false);

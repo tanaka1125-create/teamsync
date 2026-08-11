@@ -20,8 +20,9 @@ const style = fs.readFileSync(
   'id="candidate-summary-list"',
   'id="results-table-head"',
   'id="results-table-body"',
+  'id="results-action-notice"',
   'id="response-page-link"',
-  'src="js/event.js?v=11"',
+  'src="js/event.js?v=13"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
 
 assert.equal(eventHtml.includes('id="response-form"'), false);
@@ -35,11 +36,18 @@ assert.match(eventScript, /renderCandidateSummaries\(results\)/);
 assert.match(eventScript, /renderResultsTable\(results\)/);
 assert.match(eventScript, /editLink\.className = "result-participant-link"/);
 assert.match(eventScript, /getResponsePageUrl\(currentEventId, participant\.id\)/);
+assert.match(eventScript, /deleteButton\.className = "result-delete-button"/);
+assert.match(eventScript, /window\.TeamSyncApi\.deleteParticipant/);
+assert.match(eventScript, /deleteButton\.dataset\.confirmDelete/);
+assert.match(eventScript, /もう一度押す/);
 assert.match(eventScript, /unansweredCount/);
 assert.match(eventScript, /await loadResults\(\)/);
 assert.match(style, /\.candidate-summary-list/);
 assert.match(style, /\.results-table-scroll/);
 assert.match(style, /\.result-participant-link/);
+assert.match(style, /\.result-delete-button/);
+assert.match(style, /font-size: 0\.86rem/);
+assert.match(style, /font-size: 0\.8rem/);
 assert.match(style, /overflow-x: auto/);
 
 console.log("Phase 7 results page checks passed.");
