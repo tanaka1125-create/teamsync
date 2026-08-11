@@ -15,11 +15,14 @@ GitHub Pagesでそのまま公開できる静的サイトです。ログイン�
 - 候補日ごとの開始・終了時刻を30分刻みで設定
 - 候補日時の並べ替え表示・個別削除・時刻検証
 - 選択状態の表示とキーボードの矢印キー操作
+- Supabase REST APIによるイベント保存処理
+- 1回の処理でイベントと候補日時を保存するデータベース関数
+- Row Level Securityと入力値検証を含むSQL
 - イベント作成ボタンと基本的な入力検証
 - イベントページのプレースホルダー
 - PC・スマートフォン対応のレスポンシブデザイン
 
-イベント保存、Supabase接続、共有URL、出欠回答、集計はまだ実装していません。
+Supabaseの接続情報はまだ設定されていません。共有URL、出欠回答、集計は後続フェーズで実装します。
 
 ## ファイル構成
 
@@ -33,7 +36,10 @@ teamsync/
 │  ├─ calendar.js
 │  ├─ config.js
 │  ├─ create-event.js
-│  └─ event.js
+│  ├─ event.js
+│  └─ supabase.js
+├─ supabase/
+│  └─ schema.sql
 └─ README.md
 ```
 
@@ -58,8 +64,14 @@ python -m http.server 8000
 
 数分後、`https://<GitHubユーザー名>.github.io/<リポジトリ名>/` で表示できます。
 
-## Supabaseについて
+## Supabaseを接続する
 
-現在はSupabaseに接続していません。`js/config.js`にもURLやキーは設定していません。
+1. Supabaseでプロジェクトを作成します。
+2. **SQL Editor** で `supabase/schema.sql` の内容をすべて実行します。
+3. **Project Settings → API** からProject URLとpublishable key（旧プロジェクトではanon key）を確認します。
+4. `js/config.js` の `supabaseUrl` と `supabasePublicKey` に設定します。
+5. GitHubへ反映し、イベント作成画面の保存先表示が緑色になることを確認します。
 
-後続フェーズで接続する際は、ブラウザ公開を前提としたSupabaseのanon keyとRow Level Securityを使用します。service role keyなどの秘密情報はリポジトリへ保存しないでください。
+ブラウザで使うpublishable/anon keyだけを設定してください。`service_role` keyやデータベースパスワードは、HTML・JavaScript・GitHubリポジトリへ保存しないでください。
+
+イベントと1〜10件の候補日時は、`create_event_with_dates` 関数によって1回のトランザクションで保存されます。途中でエラーになった場合は全体が取り消されるため、イベントだけが残ることはありません。

@@ -153,8 +153,23 @@
             <p id="schedule-error" class="field-error" aria-live="polite"></p>
           </fieldset>
 
-          <button class="primary-button" type="submit">
-            <span>イベントを作成</span>
+          <div
+            class="backend-status"
+            id="supabase-status"
+            role="status"
+            aria-live="polite"
+            tabindex="-1"
+          >
+            <span class="backend-status-indicator" aria-hidden="true"></span>
+            <div>
+              <strong id="supabase-status-label">保存先を確認しています</strong>
+              <span id="supabase-status-detail">Supabaseの設定を読み込んでいます。</span>
+            </div>
+          </div>
+
+          <button class="primary-button" id="create-event-button" type="submit">
+            <span class="button-spinner" aria-hidden="true" hidden></span>
+            <span id="create-event-button-label">イベントを作成</span>
             <svg viewBox="0 0 20 20" aria-hidden="true">
               <path d="m7 4 6 6-6 6" />
             </svg>
@@ -171,6 +186,7 @@
 
     <script src="js/config.js" defer></script>
     <script src="js/calendar.js" defer></script>
+    <script src="js/supabase.js" defer></script>
     <script src="js/create-event.js" defer></script>
   </body>
 </html>
