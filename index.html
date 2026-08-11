@@ -126,14 +126,29 @@
                   </svg>
                 </span>
                 <div>
-                  <span class="calendar-selection-label">選択中の日付</span>
-                  <strong id="selected-date-label">日付を選択してください</strong>
+                  <span class="calendar-selection-label">選択中の候補</span>
+                  <strong id="selected-count-label">0 / 10件</strong>
                 </div>
               </div>
             </div>
-            <input id="selected-date" name="date" type="hidden" />
+
+            <section class="candidate-editor" aria-labelledby="candidate-editor-title">
+              <div class="candidate-editor-header">
+                <div>
+                  <h3 id="candidate-editor-title">候補日時</h3>
+                  <p>選択した日ごとに時間を設定してください</p>
+                </div>
+                <span class="candidate-count" id="candidate-count" aria-live="polite">0件</span>
+              </div>
+              <div class="candidate-empty" id="candidate-empty">
+                カレンダーから候補日を選ぶと、ここで時間を設定できます。
+              </div>
+              <div class="candidate-list" id="candidate-list"></div>
+            </section>
+
+            <input id="schedule-data" name="schedule" type="hidden" />
             <p id="schedule-note" class="field-hint schedule-hint">
-              Phase 2では1日選択できます。複数候補と時刻は次のフェーズで追加します。
+              候補日は最大10件、開始・終了時刻は30分刻みで設定できます。
             </p>
             <p id="schedule-error" class="field-error" aria-live="polite"></p>
           </fieldset>
