@@ -1,6 +1,6 @@
 /**
- * TeamSync Phase 2 calendar.
- * Phase 3 will extend this from one selected date to multiple date/time candidates.
+ * TeamSync Phase 3 calendar and candidate-time editor.
+ * Event persistence will be connected to Supabase in Phase 4.
  */
 (function initializeCalendar() {
   "use strict";
@@ -12,18 +12,25 @@
     return;
   }
 
+  const MAX_CANDIDATES = 10;
+  const DEFAULT_START_TIME = "20:00";
+  const DEFAULT_END_TIME = "22:00";
+
   const monthLabel = calendar.querySelector("#calendar-month");
   const grid = calendar.querySelector("#calendar-grid");
   const previousButton = calendar.querySelector("#calendar-previous");
   const nextButton = calendar.querySelector("#calendar-next");
-  const selectedDateInput = document.querySelector("#selected-date");
-  const selectedDateLabel = calendar.querySelector("#selected-date-label");
   const selectionPanel = calendar.querySelector("#calendar-selection");
+  const selectedCountLabel = calendar.querySelector("#selected-count-label");
+  const candidateCount = document.querySelector("#candidate-count");
+  const candidateEmpty = document.querySelector("#candidate-empty");
+  const candidateList = document.querySelector("#candidate-list");
+  const scheduleDataInput = document.querySelector("#schedule-data");
   const scheduleError = document.querySelector("#schedule-error");
 
   const today = startOfDay(new Date());
+  const candidates = new Map();
   let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  let selectedDate = null;
 
   function startOfDay(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -36,6 +43,10 @@
     return `${year}-${month}-${day}`;
   }
 
+  function fromIsoDate(isoDate) {
+    return new Date(`${isoDate}T00:00:00`);
+  }
+
   function formatMonth(date) {
     return new Intl.DateTimeFormat("ja-JP", {
       year: "numeric",
@@ -43,7 +54,7 @@
     }).format(date);
   }
 
-  function formatSelectedDate(date) {
+  function formatCandidateDate(date) {
     return new Intl.DateTimeFormat("ja-JP", {
       year: "numeric",
       month: "long",
@@ -63,6 +74,16 @@
     );
   }
 
+  function getSortedCandidates() {
+    return Array.from(candidates.values()).sort((first, second) =>
+      first.date.localeCompare(second.date),
+    );
+  }
+
+  function getCandidates() {
+    return getSortedCandidates().map((candidate) => ({ ...candidate }));
+  }
+
   function createEmptyCell() {
     const cell = document.createElement("span");
     cell.className = "calendar-empty-cell";
@@ -72,16 +93,17 @@
 
   function createDayButton(date) {
     const button = document.createElement("button");
+    const isoDate = toIsoDate(date);
     const dayOfWeek = date.getDay();
     const isPast = date < today;
     const isToday = isSameDate(date, today);
-    const isSelected = isSameDate(date, selectedDate);
+    const isSelected = candidates.has(isoDate);
 
     button.className = "calendar-day";
     button.type = "button";
-    button.dataset.date = toIsoDate(date);
+    button.dataset.date = isoDate;
     button.textContent = String(date.getDate());
-    button.setAttribute("aria-label", formatSelectedDate(date));
+    button.setAttribute("aria-label", formatCandidateDate(date));
     button.setAttribute("aria-pressed", String(isSelected));
 
     if (dayOfWeek === 0) {
@@ -97,23 +119,25 @@
 
     if (isSelected) {
       button.classList.add("is-selected");
+      button.setAttribute("aria-label", `${formatCandidateDate(date)}、選択中`);
     }
 
     if (isPast) {
       button.disabled = true;
       button.classList.add("is-past");
-      button.setAttribute("aria-label", `${formatSelectedDate(date)}、選択できません`);
+      button.setAttribute("aria-label", `${formatCandidateDate(date)}、選択できません`);
     }
 
     button.addEventListener("click", function handleDateSelection() {
-      selectDate(date);
+      toggleDate(date);
+      grid.querySelector(`[data-date="${isoDate}"]`)?.focus();
     });
 
     button.addEventListener("keydown", handleDayKeydown);
     return button;
   }
 
-  function render() {
+  function renderCalendar() {
     const year = visibleMonth.getFullYear();
     const month = visibleMonth.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
@@ -139,27 +163,211 @@
     grid.append(fragment);
   }
 
-  function selectDate(date) {
-    selectedDate = startOfDay(date);
-    selectedDateInput.value = toIsoDate(selectedDate);
-    selectedDateLabel.textContent = formatSelectedDate(selectedDate);
-    selectionPanel.classList.add("has-selection");
-    scheduleError.textContent = "";
-    render();
+  function formatTime(totalMinutes) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
 
+  function createTimeSelect(candidate, field, labelText, errorId) {
+    const wrapper = document.createElement("label");
+    const label = document.createElement("span");
+    const select = document.createElement("select");
+    const isEndTime = field === "endTime";
+    const firstMinutes = isEndTime ? 30 : 0;
+    const lastMinutes = isEndTime ? 24 * 60 : 23 * 60 + 30;
+
+    wrapper.className = "time-field";
+    label.textContent = labelText;
+    select.className = "time-select";
+    select.dataset.timeField = field;
+    select.setAttribute(
+      "aria-label",
+      `${formatCandidateDate(fromIsoDate(candidate.date))}の${labelText}時刻`,
+    );
+    select.setAttribute("aria-describedby", errorId);
+
+    for (let minutes = firstMinutes; minutes <= lastMinutes; minutes += 30) {
+      const value = formatTime(minutes);
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      option.selected = value === candidate[field];
+      select.append(option);
+    }
+
+    select.addEventListener("change", function handleTimeChange() {
+      candidate[field] = select.value;
+      syncScheduleData();
+      validateCandidate(candidate.date);
+      dispatchScheduleChange();
+    });
+
+    wrapper.append(label, select);
+    return wrapper;
+  }
+
+  function createCandidateCard(candidate, index) {
+    const card = document.createElement("article");
+    const header = document.createElement("div");
+    const headingGroup = document.createElement("div");
+    const candidateIndex = document.createElement("span");
+    const dateHeading = document.createElement("h4");
+    const removeButton = document.createElement("button");
+    const timeRange = document.createElement("div");
+    const separator = document.createElement("span");
+    const error = document.createElement("p");
+    const formattedDate = formatCandidateDate(fromIsoDate(candidate.date));
+    const errorId = `candidate-error-${candidate.date}`;
+
+    card.className = "candidate-card";
+    card.dataset.candidateDate = candidate.date;
+    header.className = "candidate-card-header";
+    headingGroup.className = "candidate-heading-group";
+    candidateIndex.className = "candidate-index";
+    candidateIndex.textContent = `候補 ${index + 1}`;
+    dateHeading.className = "candidate-date";
+    dateHeading.textContent = formattedDate;
+
+    removeButton.className = "candidate-remove-button";
+    removeButton.type = "button";
+    removeButton.setAttribute("aria-label", `${formattedDate}を候補から削除`);
+    removeButton.innerHTML =
+      '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" /></svg>';
+    removeButton.addEventListener("click", function handleCandidateRemoval() {
+      removeCandidate(candidate.date, index);
+    });
+
+    headingGroup.append(candidateIndex, dateHeading);
+    header.append(headingGroup, removeButton);
+
+    timeRange.className = "time-range";
+    separator.className = "time-separator";
+    separator.textContent = "〜";
+    separator.setAttribute("aria-hidden", "true");
+    timeRange.append(
+      createTimeSelect(candidate, "startTime", "開始", errorId),
+      separator,
+      createTimeSelect(candidate, "endTime", "終了", errorId),
+    );
+
+    error.id = errorId;
+    error.className = "candidate-time-error";
+    error.setAttribute("aria-live", "polite");
+    card.append(header, timeRange, error);
+    return card;
+  }
+
+  function renderCandidates() {
+    const sortedCandidates = getSortedCandidates();
+    const fragment = document.createDocumentFragment();
+    const count = sortedCandidates.length;
+
+    candidateList.replaceChildren();
+    candidateEmpty.hidden = count > 0;
+    candidateCount.textContent = `${count}件`;
+    selectedCountLabel.textContent = `${count} / ${MAX_CANDIDATES}件`;
+    selectionPanel.classList.toggle("has-selection", count > 0);
+
+    sortedCandidates.forEach((candidate, index) => {
+      fragment.append(createCandidateCard(candidate, index));
+    });
+
+    candidateList.append(fragment);
+    syncScheduleData();
+  }
+
+  function timeToMinutes(time) {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  }
+
+  function isCandidateTimeValid(candidate) {
+    return timeToMinutes(candidate.startTime) < timeToMinutes(candidate.endTime);
+  }
+
+  function validateCandidate(isoDate) {
+    const candidate = candidates.get(isoDate);
+    const card = candidateList.querySelector(`[data-candidate-date="${isoDate}"]`);
+
+    if (!candidate || !card) {
+      return true;
+    }
+
+    const isValid = isCandidateTimeValid(candidate);
+    const error = card.querySelector(".candidate-time-error");
+
+    card.querySelectorAll(".time-select").forEach((select) => {
+      select.setAttribute("aria-invalid", String(!isValid));
+    });
+    error.textContent = isValid ? "" : "終了時刻は開始時刻より後にしてください。";
+    return isValid;
+  }
+
+  function validateCandidates() {
+    return getSortedCandidates().every((candidate) =>
+      validateCandidate(candidate.date),
+    );
+  }
+
+  function syncScheduleData() {
+    scheduleDataInput.value = JSON.stringify(getCandidates());
+  }
+
+  function dispatchScheduleChange() {
     document.dispatchEvent(
-      new CustomEvent("teamsync:datechange", {
-        detail: { date: selectedDateInput.value },
+      new CustomEvent("teamsync:schedulechange", {
+        detail: { candidates: getCandidates() },
       }),
     );
   }
 
+  function toggleDate(date) {
+    const isoDate = toIsoDate(startOfDay(date));
+
+    if (candidates.has(isoDate)) {
+      candidates.delete(isoDate);
+    } else {
+      if (candidates.size >= MAX_CANDIDATES) {
+        scheduleError.textContent = `候補日時は${MAX_CANDIDATES}件まで選択できます。`;
+        return;
+      }
+
+      candidates.set(isoDate, {
+        date: isoDate,
+        startTime: DEFAULT_START_TIME,
+        endTime: DEFAULT_END_TIME,
+      });
+    }
+
+    scheduleError.textContent = "";
+    renderCalendar();
+    renderCandidates();
+    dispatchScheduleChange();
+  }
+
+  function removeCandidate(isoDate, previousIndex) {
+    candidates.delete(isoDate);
+    scheduleError.textContent = "";
+    renderCalendar();
+    renderCandidates();
+    dispatchScheduleChange();
+
+    const remainingRemoveButtons = candidateList.querySelectorAll(
+      ".candidate-remove-button",
+    );
+    const nextButtonToFocus =
+      remainingRemoveButtons[Math.min(previousIndex, remainingRemoveButtons.length - 1)];
+    const visibleDayButton = grid.querySelector(`[data-date="${isoDate}"]`);
+    (nextButtonToFocus || visibleDayButton || grid.querySelector(".calendar-day:not(:disabled)"))?.focus();
+  }
+
   function clearSelection() {
-    selectedDate = null;
-    selectedDateInput.value = "";
-    selectedDateLabel.textContent = "日付を選択してください";
-    selectionPanel.classList.remove("has-selection");
-    render();
+    candidates.clear();
+    scheduleError.textContent = "";
+    renderCalendar();
+    renderCandidates();
+    dispatchScheduleChange();
   }
 
   function changeMonth(offset) {
@@ -168,7 +376,7 @@
       visibleMonth.getMonth() + offset,
       1,
     );
-    render();
+    renderCalendar();
   }
 
   function handleDayKeydown(event) {
@@ -185,7 +393,7 @@
     }
 
     event.preventDefault();
-    const focusedDate = new Date(`${event.currentTarget.dataset.date}T00:00:00`);
+    const focusedDate = fromIsoDate(event.currentTarget.dataset.date);
     const targetDate = new Date(
       focusedDate.getFullYear(),
       focusedDate.getMonth(),
@@ -201,7 +409,7 @@
       targetDate.getFullYear() !== visibleMonth.getFullYear()
     ) {
       visibleMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-      render();
+      renderCalendar();
     }
 
     grid.querySelector(`[data-date="${toIsoDate(targetDate)}"]`)?.focus();
@@ -217,13 +425,17 @@
     changeMonth(1);
   });
 
-  render();
+  renderCalendar();
+  renderCandidates();
 
   window.TeamSyncCalendar = Object.freeze({
     isAvailable: true,
+    maxCandidates: MAX_CANDIDATES,
+    getCandidates,
     getSelectedDate: function getSelectedDate() {
-      return selectedDateInput.value || null;
+      return getCandidates()[0]?.date || null;
     },
+    validateCandidates,
     clearSelection,
   });
 })();
