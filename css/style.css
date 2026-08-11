@@ -1636,15 +1636,8 @@ input[aria-invalid="true"]:focus {
   border-right: 0;
 }
 
-.results-table tfoot tr > * {
+.results-table tbody tr:last-child > * {
   border-bottom: 0;
-  color: #344054;
-  background: #f8fafc;
-  font-weight: 750;
-}
-
-.results-table tfoot th:first-child {
-  background: #f8fafc;
 }
 
 .result-status {
@@ -1682,10 +1675,6 @@ input[aria-invalid="true"]:focus {
   line-height: 1.55;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-}
-
-.results-total-cell {
-  white-space: nowrap;
 }
 
 .event-page-actions {
