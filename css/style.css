@@ -38,6 +38,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -501,6 +502,202 @@ input[aria-invalid="true"]:focus {
   font-size: 0.84rem;
 }
 
+.candidate-editor {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: #fbfcfe;
+}
+
+.candidate-editor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.candidate-editor-header h3,
+.candidate-editor-header p,
+.candidate-date {
+  margin: 0;
+}
+
+.candidate-editor-header h3 {
+  font-size: 0.95rem;
+  letter-spacing: -0.015em;
+}
+
+.candidate-editor-header p {
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.candidate-count {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: #315b96;
+  background: var(--color-primary-soft);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.candidate-empty {
+  padding: 22px 16px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  color: var(--color-muted);
+  background: #fff;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.candidate-list {
+  display: grid;
+  gap: 10px;
+}
+
+.candidate-card {
+  padding: 15px;
+  border: 1px solid var(--color-border);
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.035);
+}
+
+.candidate-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 13px;
+}
+
+.candidate-heading-group {
+  min-width: 0;
+}
+
+.candidate-index {
+  display: block;
+  margin-bottom: 1px;
+  color: var(--color-primary);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.candidate-date {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.candidate-remove-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  color: var(--color-muted);
+  background: #fff;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.candidate-remove-button svg {
+  width: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.candidate-remove-button:hover {
+  border-color: #efb4ae;
+  color: var(--color-danger);
+  background: #fff7f6;
+}
+
+.candidate-remove-button:focus-visible,
+.time-select:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.22);
+  outline-offset: 2px;
+}
+
+.time-range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 9px;
+}
+
+.time-field {
+  min-width: 0;
+  margin: 0;
+}
+
+.time-field > span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.time-select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  outline: none;
+  color: var(--color-text);
+  background: #fff;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.time-select:hover {
+  border-color: #b8c2ce;
+}
+
+.time-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.time-select[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.time-separator {
+  padding-bottom: 10px;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}
+
+.candidate-time-error {
+  min-height: 1.2rem;
+  margin: 4px 0 -3px;
+  color: var(--color-danger);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
 .schedule-hint {
   margin-top: 8px;
 }
@@ -687,6 +884,23 @@ input[aria-invalid="true"]:focus {
 
   .calendar-selection {
     margin: 0 10px 10px;
+  }
+
+  .candidate-editor {
+    padding: 14px 12px;
+  }
+
+  .candidate-card {
+    padding: 13px 12px;
+  }
+
+  .time-range {
+    gap: 6px;
+  }
+
+  .time-select {
+    padding-inline: 7px;
+    font-size: 0.82rem;
   }
 
   .calendar-icon {
