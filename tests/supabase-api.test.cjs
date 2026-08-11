@@ -80,6 +80,61 @@ async function testSuccessfulCreate() {
   });
 }
 
+async function testSuccessfulRead() {
+  let capturedRequest;
+  const api = loadApi(
+    {
+      supabaseUrl: "https://example.supabase.co/",
+      supabasePublicKey: "sb_publishable_example",
+    },
+    async (url, options) => {
+      capturedRequest = { url, options };
+      return {
+        ok: true,
+        json: async () => ({
+          id: "11111111-1111-4111-8111-111111111111",
+          title: "チーム練習",
+          description: "参加できる日時を確認してください。",
+          dates: [
+            {
+              id: "22222222-2222-4222-8222-222222222222",
+              eventDate: "2026-08-14",
+              startTime: "20:00",
+              endTime: "22:00",
+            },
+          ],
+        }),
+      };
+    },
+  );
+
+  const eventData = await api.getEvent("11111111-1111-4111-8111-111111111111");
+  assert.equal(eventData.title, "チーム練習");
+  assert.equal(eventData.dates.length, 1);
+  assert.equal(
+    capturedRequest.url,
+    "https://example.supabase.co/rest/v1/rpc/get_event_details",
+  );
+  assert.deepEqual(JSON.parse(capturedRequest.options.body), {
+    p_event_id: "11111111-1111-4111-8111-111111111111",
+  });
+}
+
+async function testMissingEvent() {
+  const api = loadApi(
+    {
+      supabaseUrl: "https://example.supabase.co",
+      supabasePublicKey: "sb_publishable_example",
+    },
+    async () => ({ ok: true, json: async () => null }),
+  );
+
+  assert.equal(
+    await api.getEvent("11111111-1111-4111-8111-111111111111"),
+    null,
+  );
+}
+
 async function testMissingConfiguration() {
   let fetchCalled = false;
   const api = loadApi(
@@ -168,6 +223,9 @@ function testSchemaGuards() {
     /revoke all on table public\.events from anon/,
     /revoke all on table public\.event_dates from anon/,
     /grant execute on function public\.create_event_with_dates/,
+    /create or replace function public\.get_event_details/,
+    /grant execute on function public\.get_event_details\(uuid\) to anon/,
+    /revoke all on function public\.get_event_details\(uuid\)[\s\S]*from public, authenticated/,
     /grant usage on schema public to anon/,
     /from public, authenticated/,
     /jsonb_array_length\(p_dates\) not between 1 and 10/,
@@ -179,6 +237,8 @@ function testSchemaGuards() {
 
 async function main() {
   await testSuccessfulCreate();
+  await testSuccessfulRead();
+  await testMissingEvent();
   await testMissingConfiguration();
   await testSupabaseError();
   await testLegacyAnonAuthorization();
