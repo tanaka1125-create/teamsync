@@ -58,6 +58,16 @@
     }
   }
 
+  function getSupabaseErrorCode(message) {
+    if (message.includes("PARTICIPANT_NAME_EXISTS")) {
+      return "PARTICIPANT_NAME_EXISTS";
+    }
+    if (message.includes("PARTICIPANT_NOT_FOUND")) {
+      return "PARTICIPANT_NOT_FOUND";
+    }
+    return "SUPABASE_ERROR";
+  }
+
   async function callRpc(functionName, requestBody) {
     if (!isConfigured()) {
       throw createApiError(
@@ -79,7 +89,7 @@
 
       if (!response.ok) {
         const message = await readErrorMessage(response);
-        throw createApiError("SUPABASE_ERROR", message);
+        throw createApiError(getSupabaseErrorCode(message), message);
       }
 
       return await response.json();
@@ -202,11 +212,37 @@
     return result;
   }
 
+  async function updateResponses(responseData) {
+    const result = await callRpc("update_event_responses", {
+      p_event_id: responseData.eventId,
+      p_participant_id: responseData.participantId,
+      p_responses: responseData.responses.map((response) => ({
+        event_date_id: response.eventDateId,
+        status: response.status,
+        comment: response.comment.trim() || null,
+      })),
+    });
+
+    if (
+      typeof result !== "object" ||
+      typeof result.participantId !== "string" ||
+      typeof result.savedCount !== "number"
+    ) {
+      throw createApiError(
+        "INVALID_RESPONSE",
+        "Supabaseから回答の変更結果を取得できませんでした。",
+      );
+    }
+
+    return result;
+  }
+
   window.TeamSyncApi = Object.freeze({
     isConfigured,
     createEvent,
     getEvent,
     getEventResults,
     submitResponses,
+    updateResponses,
   });
 })();

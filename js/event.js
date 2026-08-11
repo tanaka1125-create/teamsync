@@ -16,7 +16,10 @@
   const responsePageLink = document.querySelector("#response-page-link");
   const backToResultsLink = document.querySelector("#back-to-results-link");
   const responseForm = document.querySelector("#response-form");
+  const responsePageHeading = document.querySelector("#event-dates-title");
+  const responseModeHint = document.querySelector("#response-mode-hint");
   const participantName = document.querySelector("#participant-name");
+  const participantNameHint = document.querySelector("#participant-name-hint");
   const participantNameCount = document.querySelector("#participant-name-count");
   const participantNameError = document.querySelector("#participant-name-error");
   const responseFormError = document.querySelector("#response-form-error");
@@ -42,6 +45,7 @@
   ];
   let currentEventId = "";
   let currentEventDates = [];
+  let currentParticipantId = "";
   let isLoadingResults = false;
 
   document.documentElement.dataset.teamsyncPhase = String(
@@ -55,10 +59,13 @@
     return url.href;
   }
 
-  function getResponsePageUrl(eventId) {
+  function getResponsePageUrl(eventId, participantId = "") {
     const url = new URL("response.html", window.location.href);
     url.search = "";
     url.searchParams.set("id", eventId);
+    if (participantId) {
+      url.searchParams.set("participant", participantId);
+    }
     return url.href;
   }
 
@@ -372,7 +379,12 @@
       const row = document.createElement("tr");
       const name = document.createElement("th");
       name.scope = "row";
-      name.textContent = participant.name;
+      const editLink = document.createElement("a");
+      editLink.className = "result-participant-link";
+      editLink.href = getResponsePageUrl(currentEventId, participant.id);
+      editLink.textContent = participant.name;
+      editLink.setAttribute("aria-label", `${participant.name}さんの回答を編集`);
+      name.append(editLink);
       row.append(name);
 
       const responseByDateId = new Map(
@@ -512,7 +524,11 @@
 
     submitResponseButton.disabled = isSubmitting;
     submitResponseButton.setAttribute("aria-busy", String(isSubmitting));
-    submitResponseLabel.textContent = isSubmitting ? "保存しています…" : "回答を保存";
+    submitResponseLabel.textContent = isSubmitting
+      ? "保存しています…"
+      : currentParticipantId
+        ? "変更を保存"
+        : "回答を保存";
     submitResponseSpinner.hidden = !isSubmitting;
   }
 
@@ -526,16 +542,94 @@
         return "回答を保存できませんでした。通信環境を確認してください。";
       case "INVALID_RESPONSE":
         return "回答の保存結果を確認できませんでした。もう一度お試しください。";
+      case "PARTICIPANT_NAME_EXISTS":
+        return "この名前はすでに回答済みです。回答一覧の名前をクリックして変更してください。";
+      case "PARTICIPANT_NOT_FOUND":
+        return "編集する回答が見つかりませんでした。回答一覧から選び直してください。";
       default:
         return "回答を保存できませんでした。入力内容を確認してもう一度お試しください。";
     }
   }
 
+  function populateResponseForEdit(participant) {
+    currentParticipantId = participant.id;
+    participantName.value = participant.name;
+    participantName.readOnly = true;
+    participantName.setAttribute("aria-readonly", "true");
+    participantNameCount.textContent = `${participant.name.length} / 40`;
+    participantNameError.textContent = "";
+
+    if (responsePageHeading) {
+      responsePageHeading.textContent = "回答内容を編集";
+    }
+    if (responseModeHint) {
+      responseModeHint.textContent = "回答内容を変更して保存できます";
+    }
+    if (participantNameHint) {
+      participantNameHint.textContent = "回答一覧で選択した回答者を編集しています";
+    }
+    if (submitResponseLabel) {
+      submitResponseLabel.textContent = "変更を保存";
+    }
+
+    const responseByDateId = new Map(
+      (participant.responses ?? []).map((response) => [response.eventDateId, response]),
+    );
+
+    dateList.querySelectorAll("[data-event-date-id]").forEach((item) => {
+      const response = responseByDateId.get(item.dataset.eventDateId);
+      if (!response) {
+        return;
+      }
+
+      const selectedStatus = item.querySelector(
+        `input[type="radio"][value="${response.status}"]`,
+      );
+      const comment = item.querySelector(".response-comment");
+      const commentCount = item.querySelector(".response-comment-heading .character-count");
+      if (selectedStatus) {
+        selectedStatus.checked = true;
+        item.dataset.responseStatus = response.status;
+      }
+      if (comment) {
+        comment.disabled = false;
+        comment.value = response.comment ?? "";
+      }
+      if (comment && commentCount) {
+        commentCount.textContent = `${comment.value.length} / 200`;
+      }
+    });
+
+    document.title = `${participant.name}さんの回答を編集 | TeamSync`;
+  }
+
+  async function loadParticipantForEdit(participantId) {
+    const results = await window.TeamSyncApi.getEventResults(currentEventId);
+    const participant = results?.participants?.find((item) => item.id === participantId);
+
+    if (!participant) {
+      showError("編集する回答が見つかりませんでした。回答一覧から選び直してください。");
+      return false;
+    }
+
+    populateResponseForEdit(participant);
+    return true;
+  }
+
   async function loadEvent() {
-    const eventId = new URLSearchParams(window.location.search).get("id")?.trim();
+    const searchParams = new URLSearchParams(window.location.search);
+    const eventId = searchParams.get("id")?.trim();
+    const participantId = responseForm
+      ? searchParams.get("participant")?.trim() ?? ""
+      : "";
 
     if (!eventId || !UUID_PATTERN.test(eventId)) {
       showError("URLが正しくありません。共有されたイベント専用URLを確認してください。");
+      return;
+    }
+
+    if (participantId && !UUID_PATTERN.test(participantId)) {
+      showError("編集する回答のURLが正しくありません。回答一覧から選び直してください。");
       return;
     }
 
@@ -553,6 +647,9 @@
       }
 
       renderEvent(eventData);
+      if (responseForm && participantId) {
+        await loadParticipantForEdit(participantId);
+      }
       if (resultsContent) {
         await loadResults();
       }
@@ -596,14 +693,20 @@
     setResponseSubmitting(true);
 
     try {
-      const result = await window.TeamSyncApi.submitResponses({
-        eventId: currentEventId,
-        name: participantName.value,
-        responses,
-      });
+      const result = currentParticipantId
+        ? await window.TeamSyncApi.updateResponses({
+            eventId: currentEventId,
+            participantId: currentParticipantId,
+            responses,
+          })
+        : await window.TeamSyncApi.submitResponses({
+            eventId: currentEventId,
+            name: participantName.value,
+            responses,
+          });
       const savedName = participantName.value.trim();
       showResponseNotice(
-        `${savedName}さんの回答を${result.savedCount}件保存しました。回答一覧へ移動します…`,
+        `${savedName}さんの回答を${result.savedCount}件${currentParticipantId ? "変更" : "保存"}しました。回答一覧へ移動します…`,
         "success",
       );
       window.location.assign(getCanonicalEventUrl(currentEventId));
