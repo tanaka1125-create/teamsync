@@ -153,9 +153,35 @@
     return eventData;
   }
 
+  async function submitResponses(responseData) {
+    const result = await callRpc("submit_event_responses", {
+      p_event_id: responseData.eventId,
+      p_name: responseData.name.trim(),
+      p_responses: responseData.responses.map((response) => ({
+        event_date_id: response.eventDateId,
+        status: response.status,
+        comment: response.comment.trim() || null,
+      })),
+    });
+
+    if (
+      typeof result !== "object" ||
+      typeof result.participantId !== "string" ||
+      typeof result.savedCount !== "number"
+    ) {
+      throw createApiError(
+        "INVALID_RESPONSE",
+        "Supabaseから回答の保存結果を取得できませんでした。",
+      );
+    }
+
+    return result;
+  }
+
   window.TeamSyncApi = Object.freeze({
     isConfigured,
     createEvent,
     getEvent,
+    submitResponses,
   });
 })();
