@@ -1084,20 +1084,24 @@ input[aria-invalid="true"]:focus {
 
 .event-date-list {
   display: grid;
-  gap: 10px;
+  gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .event-date-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 15px 16px;
+  padding: 17px;
   border: 1px solid var(--color-border);
   border-radius: 11px;
   background: #fbfcfe;
+}
+
+.event-date-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
 }
 
 .event-date-index {
@@ -1127,6 +1131,145 @@ input[aria-invalid="true"]:focus {
   color: var(--color-muted);
   font-size: 0.8rem;
   font-weight: 650;
+}
+
+.response-name-group {
+  margin-bottom: 22px;
+}
+
+.response-date-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.response-status-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.response-status-fieldset legend,
+.response-comment-heading label {
+  margin: 0 0 7px;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.response-status-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.response-status-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.response-status-option {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-muted);
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.response-status-option:hover {
+  border-color: #b8c2ce;
+  transform: translateY(-1px);
+}
+
+.response-status-option strong {
+  font-size: 1.16rem;
+  line-height: 1;
+}
+
+.response-status-option span {
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.response-status-input:focus-visible + .response-status-option {
+  outline: 3px solid rgba(37, 99, 235, 0.22);
+  outline-offset: 2px;
+}
+
+.response-status-input:checked + .response-status-option.is-yes {
+  border-color: #74c99b;
+  color: #187848;
+  background: #ecf9f2;
+}
+
+.response-status-input:checked + .response-status-option.is-maybe {
+  border-color: #e5bd62;
+  color: #8a6112;
+  background: #fff8e8;
+}
+
+.response-status-input:checked + .response-status-option.is-no {
+  border-color: #e6a29d;
+  color: #a23830;
+  background: #fff1f0;
+}
+
+.response-comment-group {
+  min-width: 0;
+}
+
+.response-comment-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.response-comment {
+  min-height: 58px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+}
+
+.response-comment:disabled {
+  color: #98a2b3;
+  background: #f1f3f6;
+  cursor: not-allowed;
+}
+
+.response-help {
+  margin: 12px 2px 0;
+  color: var(--color-muted);
+  font-size: 0.74rem;
+}
+
+.response-form-error {
+  margin: 3px 2px 8px;
 }
 
 .event-page-actions {
@@ -1262,6 +1405,15 @@ input[aria-invalid="true"]:focus {
   .event-section-heading > p {
     max-width: 120px;
     text-align: right;
+  }
+
+  .response-date-fields {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .response-status-option {
+    min-height: 54px;
   }
 }
 
