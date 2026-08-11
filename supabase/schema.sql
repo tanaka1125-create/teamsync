@@ -356,11 +356,23 @@ begin
     raise exception 'イベントに含まれない候補日時には回答できません。';
   end if;
 
-  insert into public.participants (event_id, name)
-  values (p_event_id, btrim(p_name))
-  on conflict (event_id, name_key)
-  do update set name = excluded.name
-  returning id into saved_participant_id;
+  if exists (
+    select 1
+    from public.participants as participant
+    where participant.event_id = p_event_id
+      and participant.name_key = lower(btrim(p_name))
+  ) then
+    raise exception 'PARTICIPANT_NAME_EXISTS';
+  end if;
+
+  begin
+    insert into public.participants (event_id, name)
+    values (p_event_id, btrim(p_name))
+    returning id into saved_participant_id;
+  exception
+    when unique_violation then
+      raise exception 'PARTICIPANT_NAME_EXISTS';
+  end;
 
   insert into public.responses (
     participant_id,
@@ -377,12 +389,7 @@ begin
     event_date_id text,
     status text,
     comment text
-  )
-  on conflict (participant_id, event_date_id)
-  do update set
-    status = excluded.status,
-    comment = excluded.comment,
-    updated_at = now();
+  );
 
   get diagnostics saved_response_count = row_count;
 
@@ -398,4 +405,104 @@ revoke all on function public.submit_event_responses(uuid, text, jsonb)
 grant execute on function public.submit_event_responses(uuid, text, jsonb) to anon;
 
 comment on function public.submit_event_responses(uuid, text, jsonb) is
-  'Creates or updates the selected TeamSync responses for a participant name.';
+  'Creates a new TeamSync participant and selected responses. Duplicate names are rejected.';
+
+create or replace function public.update_event_responses(
+  p_event_id uuid,
+  p_participant_id uuid,
+  p_responses jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  saved_response_count integer;
+begin
+  if not exists (
+    select 1
+    from public.participants as participant
+    where participant.id = p_participant_id
+      and participant.event_id = p_event_id
+  ) then
+    raise exception 'PARTICIPANT_NOT_FOUND';
+  end if;
+
+  if p_responses is null or jsonb_typeof(p_responses) <> 'array' then
+    raise exception '回答の形式が正しくありません。';
+  end if;
+
+  if jsonb_array_length(p_responses) not between 1 and 10 then
+    raise exception '回答は1〜10件で指定してください。';
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_to_recordset(p_responses) as item(
+      event_date_id text,
+      status text,
+      comment text
+    )
+    where item.event_date_id is null
+       or item.event_date_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+       or item.status is null
+       or item.status not in ('yes', 'maybe', 'no')
+       or char_length(coalesce(item.comment, '')) > 200
+  ) then
+    raise exception '回答の内容が正しくありません。';
+  end if;
+
+  if (
+    select count(distinct item.event_date_id)
+    from jsonb_to_recordset(p_responses) as item(event_date_id text)
+  ) <> jsonb_array_length(p_responses) then
+    raise exception '同じ候補日時へ重複して回答できません。';
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_to_recordset(p_responses) as item(event_date_id text)
+    left join public.event_dates as candidate
+      on candidate.id = item.event_date_id::uuid
+     and candidate.event_id = p_event_id
+    where candidate.id is null
+  ) then
+    raise exception 'イベントに含まれない候補日時には回答できません。';
+  end if;
+
+  delete from public.responses
+  where participant_id = p_participant_id;
+
+  insert into public.responses (
+    participant_id,
+    event_date_id,
+    status,
+    comment
+  )
+  select
+    p_participant_id,
+    item.event_date_id::uuid,
+    item.status,
+    nullif(btrim(coalesce(item.comment, '')), '')
+  from jsonb_to_recordset(p_responses) as item(
+    event_date_id text,
+    status text,
+    comment text
+  );
+
+  get diagnostics saved_response_count = row_count;
+
+  return jsonb_build_object(
+    'participantId', p_participant_id,
+    'savedCount', saved_response_count
+  );
+end;
+$$;
+
+revoke all on function public.update_event_responses(uuid, uuid, jsonb)
+  from public, authenticated;
+grant execute on function public.update_event_responses(uuid, uuid, jsonb) to anon;
+
+comment on function public.update_event_responses(uuid, uuid, jsonb) is
+  'Replaces responses for the participant selected from a URL-scoped TeamSync results page.';
