@@ -160,10 +160,10 @@
       });
 
       form.dataset.eventId = eventId;
-      showNotice(
-        `イベントを保存しました。ID: ${eventId}。共有URLはPhase 5で発行します。`,
-        "success",
-      );
+      showNotice("イベントを保存しました。専用ページへ移動します…", "success");
+      const eventUrl = new URL("event.html", window.location.href);
+      eventUrl.searchParams.set("id", eventId);
+      window.location.assign(eventUrl.href);
     } catch (error) {
       showNotice(getSaveErrorMessage(error), "error");
     } finally {

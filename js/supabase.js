@@ -58,7 +58,7 @@
     }
   }
 
-  async function createEvent(eventData) {
+  async function callRpc(functionName, requestBody) {
     if (!isConfigured()) {
       throw createApiError(
         "NOT_CONFIGURED",
@@ -68,42 +68,21 @@
 
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    const requestBody = {
-      p_title: eventData.title.trim(),
-      p_description: eventData.description.trim() || null,
-      p_dates: eventData.candidates.map((candidate) => ({
-        event_date: candidate.date,
-        start_time: candidate.startTime,
-        end_time: candidate.endTime,
-      })),
-    };
 
     try {
-      const response = await fetch(
-        `${supabaseUrl}/rest/v1/rpc/create_event_with_dates`,
-        {
-          method: "POST",
-          headers: createRequestHeaders(),
-          body: JSON.stringify(requestBody),
-          signal: controller.signal,
-        },
-      );
+      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${functionName}`, {
+        method: "POST",
+        headers: createRequestHeaders(),
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
 
       if (!response.ok) {
         const message = await readErrorMessage(response);
         throw createApiError("SUPABASE_ERROR", message);
       }
 
-      const eventId = await response.json();
-
-      if (typeof eventId !== "string" || !eventId) {
-        throw createApiError(
-          "INVALID_RESPONSE",
-          "SupabaseからイベントIDを取得できませんでした。",
-        );
-      }
-
-      return eventId;
+      return await response.json();
     } catch (error) {
       if (error.name === "AbortError") {
         throw createApiError(
@@ -127,8 +106,56 @@
     }
   }
 
+  async function createEvent(eventData) {
+    const requestBody = {
+      p_title: eventData.title.trim(),
+      p_description: eventData.description.trim() || null,
+      p_dates: eventData.candidates.map((candidate) => ({
+        event_date: candidate.date,
+        start_time: candidate.startTime,
+        end_time: candidate.endTime,
+      })),
+    };
+
+    const eventId = await callRpc("create_event_with_dates", requestBody);
+
+    if (typeof eventId !== "string" || !eventId) {
+      throw createApiError(
+        "INVALID_RESPONSE",
+        "SupabaseからイベントIDを取得できませんでした。",
+      );
+    }
+
+    return eventId;
+  }
+
+  async function getEvent(eventId) {
+    const eventData = await callRpc("get_event_details", {
+      p_event_id: eventId,
+    });
+
+    if (eventData === null) {
+      return null;
+    }
+
+    if (
+      typeof eventData !== "object" ||
+      typeof eventData.id !== "string" ||
+      typeof eventData.title !== "string" ||
+      !Array.isArray(eventData.dates)
+    ) {
+      throw createApiError(
+        "INVALID_RESPONSE",
+        "Supabaseからイベント情報を取得できませんでした。",
+      );
+    }
+
+    return eventData;
+  }
+
   window.TeamSyncApi = Object.freeze({
     isConfigured,
     createEvent,
+    getEvent,
   });
 })();
