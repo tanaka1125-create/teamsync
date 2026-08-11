@@ -506,3 +506,40 @@ grant execute on function public.update_event_responses(uuid, uuid, jsonb) to an
 
 comment on function public.update_event_responses(uuid, uuid, jsonb) is
   'Replaces responses for the participant selected from a URL-scoped TeamSync results page.';
+
+create or replace function public.delete_event_participant(
+  p_event_id uuid,
+  p_participant_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if not exists (
+    select 1
+    from public.participants as participant
+    where participant.id = p_participant_id
+      and participant.event_id = p_event_id
+  ) then
+    raise exception 'PARTICIPANT_NOT_FOUND';
+  end if;
+
+  delete from public.participants
+  where id = p_participant_id
+    and event_id = p_event_id;
+
+  return jsonb_build_object(
+    'participantId', p_participant_id,
+    'deleted', true
+  );
+end;
+$$;
+
+revoke all on function public.delete_event_participant(uuid, uuid)
+  from public, authenticated;
+grant execute on function public.delete_event_participant(uuid, uuid) to anon;
+
+comment on function public.delete_event_participant(uuid, uuid) is
+  'Deletes one participant and cascaded responses from a URL-scoped TeamSync event.';
