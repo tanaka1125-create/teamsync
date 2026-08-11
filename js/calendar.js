@@ -27,6 +27,10 @@
   const candidateList = document.querySelector("#candidate-list");
   const scheduleDataInput = document.querySelector("#schedule-data");
   const scheduleError = document.querySelector("#schedule-error");
+  const bulkStartTime = document.querySelector("#bulk-start-time");
+  const bulkEndTime = document.querySelector("#bulk-end-time");
+  const applyBulkTimeButton = document.querySelector("#apply-bulk-time");
+  const bulkTimeMessage = document.querySelector("#bulk-time-message");
 
   const today = startOfDay(new Date());
   const candidates = new Map();
@@ -169,13 +173,25 @@
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
   }
 
+  function appendTimeOptions(select, isEndTime, selectedTime) {
+    const firstMinutes = isEndTime ? 30 : 0;
+    const lastMinutes = isEndTime ? 24 * 60 : 23 * 60 + 30;
+
+    for (let minutes = firstMinutes; minutes <= lastMinutes; minutes += 30) {
+      const value = formatTime(minutes);
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      option.selected = value === selectedTime;
+      select.append(option);
+    }
+  }
+
   function createTimeSelect(candidate, field, labelText, errorId) {
     const wrapper = document.createElement("label");
     const label = document.createElement("span");
     const select = document.createElement("select");
     const isEndTime = field === "endTime";
-    const firstMinutes = isEndTime ? 30 : 0;
-    const lastMinutes = isEndTime ? 24 * 60 : 23 * 60 + 30;
 
     wrapper.className = "time-field";
     label.textContent = labelText;
@@ -187,14 +203,7 @@
     );
     select.setAttribute("aria-describedby", errorId);
 
-    for (let minutes = firstMinutes; minutes <= lastMinutes; minutes += 30) {
-      const value = formatTime(minutes);
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = value;
-      option.selected = value === candidate[field];
-      select.append(option);
-    }
+    appendTimeOptions(select, isEndTime, candidate[field]);
 
     select.addEventListener("change", function handleTimeChange() {
       candidate[field] = select.value;
@@ -268,6 +277,13 @@
     candidateCount.textContent = `${count}件`;
     selectedCountLabel.textContent = `${count} / ${MAX_CANDIDATES}件`;
     selectionPanel.classList.toggle("has-selection", count > 0);
+    bulkStartTime.disabled = count === 0;
+    bulkEndTime.disabled = count === 0;
+    applyBulkTimeButton.disabled = count === 0;
+    bulkTimeMessage.classList.remove("is-error", "is-success");
+    bulkTimeMessage.textContent = count > 0
+      ? `${count}件の候補日時へ同じ時間を設定できます。`
+      : "候補日を選択すると一括設定できます。";
 
     sortedCandidates.forEach((candidate, index) => {
       fragment.append(createCandidateCard(candidate, index));
@@ -284,6 +300,48 @@
 
   function isCandidateTimeValid(candidate) {
     return timeToMinutes(candidate.startTime) < timeToMinutes(candidate.endTime);
+  }
+
+  function clearBulkTimeValidation() {
+    bulkStartTime.setAttribute("aria-invalid", "false");
+    bulkEndTime.setAttribute("aria-invalid", "false");
+    bulkTimeMessage.classList.remove("is-error", "is-success");
+
+    if (candidates.size > 0) {
+      bulkTimeMessage.textContent = `${candidates.size}件の候補日時へ同じ時間を設定できます。`;
+    }
+  }
+
+  function applyBulkTime() {
+    if (candidates.size === 0) {
+      return;
+    }
+
+    const startTime = bulkStartTime.value;
+    const endTime = bulkEndTime.value;
+    const isValid = timeToMinutes(startTime) < timeToMinutes(endTime);
+
+    bulkStartTime.setAttribute("aria-invalid", String(!isValid));
+    bulkEndTime.setAttribute("aria-invalid", String(!isValid));
+    bulkTimeMessage.classList.toggle("is-error", !isValid);
+    bulkTimeMessage.classList.remove("is-success");
+
+    if (!isValid) {
+      bulkTimeMessage.textContent = "終了時刻は開始時刻より後にしてください。";
+      bulkStartTime.focus();
+      return;
+    }
+
+    candidates.forEach((candidate) => {
+      candidate.startTime = startTime;
+      candidate.endTime = endTime;
+    });
+
+    renderCandidates();
+    validateCandidates();
+    dispatchScheduleChange();
+    bulkTimeMessage.classList.add("is-success");
+    bulkTimeMessage.textContent = `${candidates.size}件の候補日時を${startTime}〜${endTime}に設定しました。`;
   }
 
   function validateCandidate(isoDate) {
@@ -424,6 +482,13 @@
   nextButton.addEventListener("click", function showNextMonth() {
     changeMonth(1);
   });
+
+  bulkStartTime.addEventListener("change", clearBulkTimeValidation);
+  bulkEndTime.addEventListener("change", clearBulkTimeValidation);
+  applyBulkTimeButton.addEventListener("click", applyBulkTime);
+
+  appendTimeOptions(bulkStartTime, false, DEFAULT_START_TIME);
+  appendTimeOptions(bulkEndTime, true, DEFAULT_END_TIME);
 
   renderCalendar();
   renderCandidates();
