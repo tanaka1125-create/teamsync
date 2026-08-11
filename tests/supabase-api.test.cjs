@@ -135,6 +135,91 @@ async function testMissingEvent() {
   );
 }
 
+async function testSuccessfulResponseSubmit() {
+  let capturedRequest;
+  const api = loadApi(
+    {
+      supabaseUrl: "https://example.supabase.co/",
+      supabasePublicKey: "sb_publishable_example",
+    },
+    async (url, options) => {
+      capturedRequest = { url, options };
+      return {
+        ok: true,
+        json: async () => ({
+          participantId: "33333333-3333-4333-8333-333333333333",
+          savedCount: 2,
+        }),
+      };
+    },
+  );
+
+  const result = await api.submitResponses({
+    eventId: "11111111-1111-4111-8111-111111111111",
+    name: "  たなか  ",
+    responses: [
+      {
+        eventDateId: "22222222-2222-4222-8222-222222222222",
+        status: "yes",
+        comment: "  参加できます  ",
+      },
+      {
+        eventDateId: "44444444-4444-4444-8444-444444444444",
+        status: "maybe",
+        comment: "",
+      },
+    ],
+  });
+
+  assert.equal(result.savedCount, 2);
+  assert.equal(
+    capturedRequest.url,
+    "https://example.supabase.co/rest/v1/rpc/submit_event_responses",
+  );
+  assert.deepEqual(JSON.parse(capturedRequest.options.body), {
+    p_event_id: "11111111-1111-4111-8111-111111111111",
+    p_name: "たなか",
+    p_responses: [
+      {
+        event_date_id: "22222222-2222-4222-8222-222222222222",
+        status: "yes",
+        comment: "参加できます",
+      },
+      {
+        event_date_id: "44444444-4444-4444-8444-444444444444",
+        status: "maybe",
+        comment: null,
+      },
+    ],
+  });
+}
+
+async function testInvalidResponseSubmitResult() {
+  const api = loadApi(
+    {
+      supabaseUrl: "https://example.supabase.co",
+      supabasePublicKey: "sb_publishable_example",
+    },
+    async () => ({ ok: true, json: async () => ({ savedCount: "1" }) }),
+  );
+
+  await assert.rejects(
+    () =>
+      api.submitResponses({
+        eventId: "11111111-1111-4111-8111-111111111111",
+        name: "たなか",
+        responses: [
+          {
+            eventDateId: "22222222-2222-4222-8222-222222222222",
+            status: "yes",
+            comment: "",
+          },
+        ],
+      }),
+    (error) => error.code === "INVALID_RESPONSE",
+  );
+}
+
 async function testMissingConfiguration() {
   let fetchCalled = false;
   const api = loadApi(
@@ -222,9 +307,17 @@ function testSchemaGuards() {
     /security definer/,
     /revoke all on table public\.events from anon/,
     /revoke all on table public\.event_dates from anon/,
+    /revoke all on table public\.participants from anon/,
+    /revoke all on table public\.responses from anon/,
     /grant execute on function public\.create_event_with_dates/,
     /create or replace function public\.get_event_details/,
     /grant execute on function public\.get_event_details\(uuid\) to anon/,
+    /create or replace function public\.submit_event_responses/,
+    /grant execute on function public\.submit_event_responses\(uuid, text, jsonb\) to anon/,
+    /constraint participants_unique_name unique \(event_id, name_key\)/,
+    /constraint responses_unique_candidate unique \(participant_id, event_date_id\)/,
+    /on conflict \(participant_id, event_date_id\)/,
+    /status text not null check \(status in \('yes', 'maybe', 'no'\)\)/,
     /revoke all on function public\.get_event_details\(uuid\)[\s\S]*from public, authenticated/,
     /grant usage on schema public to anon/,
     /from public, authenticated/,
@@ -239,6 +332,8 @@ async function main() {
   await testSuccessfulCreate();
   await testSuccessfulRead();
   await testMissingEvent();
+  await testSuccessfulResponseSubmit();
+  await testInvalidResponseSubmitResult();
   await testMissingConfiguration();
   await testSupabaseError();
   await testLegacyAnonAuthorization();
