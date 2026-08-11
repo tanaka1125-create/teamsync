@@ -938,7 +938,16 @@ input[aria-invalid="true"]:focus {
 
 .event-content {
   display: grid;
+  min-width: 0;
   gap: 18px;
+}
+
+.event-summary,
+.event-dates,
+.event-summary-heading > div,
+.share-panel > div,
+.event-date-detail {
+  min-width: 0;
 }
 
 .event-summary-heading {
