@@ -22,6 +22,7 @@ const style = fs.readFileSync(
   'id="results-table-body"',
   'id="results-action-notice"',
   'id="response-page-link"',
+  'href="css/style.css?v=14"',
   'src="js/event.js?v=13"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
 
@@ -48,6 +49,14 @@ assert.match(style, /\.result-participant-link/);
 assert.match(style, /\.result-delete-button/);
 assert.match(style, /font-size: 0\.86rem/);
 assert.match(style, /font-size: 0\.8rem/);
+assert.match(
+  style,
+  /\.results-table thead th \{[\s\S]*?font-size: 1\.05rem;[\s\S]*?line-height: 1\.35;/,
+);
+assert.match(
+  style,
+  /\.results-table thead th span \{[\s\S]*?font-size: 0\.86rem;/,
+);
 assert.match(style, /overflow-x: auto/);
 
 console.log("Phase 7 results page checks passed.");
