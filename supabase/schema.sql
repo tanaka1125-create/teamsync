@@ -1,4 +1,4 @@
--- TeamSync Phase 4 schema
+-- TeamSync Phase 5 schema
 -- Run this entire file once in Supabase Dashboard > SQL Editor.
 
 create extension if not exists pgcrypto;
@@ -121,3 +121,44 @@ grant execute on function public.create_event_with_dates(text, text, jsonb) to a
 
 comment on function public.create_event_with_dates(text, text, jsonb) is
   'Creates one TeamSync event and 1-10 candidate dates in a single transaction.';
+
+-- Only the fields required by the public event page are returned.
+-- Direct table access remains revoked.
+create or replace function public.get_event_details(p_event_id uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select jsonb_build_object(
+    'id', event.id,
+    'title', event.title,
+    'description', event.description,
+    'dates', coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', candidate.id,
+            'eventDate', to_char(candidate.event_date, 'YYYY-MM-DD'),
+            'startTime', to_char(candidate.start_time, 'HH24:MI'),
+            'endTime', to_char(candidate.end_time, 'HH24:MI')
+          )
+          order by candidate.event_date, candidate.start_time, candidate.id
+        )
+        from public.event_dates as candidate
+        where candidate.event_id = event.id
+      ),
+      '[]'::jsonb
+    )
+  )
+  from public.events as event
+  where event.id = p_event_id;
+$$;
+
+revoke all on function public.get_event_details(uuid)
+  from public, authenticated;
+grant execute on function public.get_event_details(uuid) to anon;
+
+comment on function public.get_event_details(uuid) is
+  'Returns the public TeamSync event fields for a URL-scoped event ID.';
