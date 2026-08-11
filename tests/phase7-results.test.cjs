@@ -20,9 +20,13 @@ const style = fs.readFileSync(
   'id="candidate-summary-list"',
   'id="results-table-head"',
   'id="results-table-body"',
-  'id="results-table-foot"',
-  'src="js/event.js?v=7"',
+  'src="js/event.js?v=9"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
+
+assert.equal(eventHtml.includes('id="results-table-foot"'), false);
+assert.equal(eventScript.includes('textContent = "集計"'), false);
+assert.equal(eventScript.includes("results-total-cell"), false);
+assert.equal(style.includes(".results-table tfoot"), false);
 
 assert.match(eventScript, /TeamSyncApi\.getEventResults\(currentEventId\)/);
 assert.match(eventScript, /renderCandidateSummaries\(results\)/);
