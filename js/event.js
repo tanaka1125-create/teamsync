@@ -31,6 +31,7 @@
   const refreshResultsButton = document.querySelector("#refresh-results-button");
   const resultsLoadingState = document.querySelector("#results-loading");
   const resultsErrorState = document.querySelector("#results-error");
+  const resultsActionNotice = document.querySelector("#results-action-notice");
   const resultsEmptyState = document.querySelector("#results-empty");
   const resultsContent = document.querySelector("#results-content");
   const candidateSummaryList = document.querySelector("#candidate-summary-list");
@@ -123,6 +124,17 @@
     responseNotice.classList.toggle("is-success", type === "success");
     responseNotice.classList.toggle("is-error", type === "error");
     responseNotice.hidden = false;
+  }
+
+  function showResultsActionNotice(message, type) {
+    if (!resultsActionNotice) {
+      return;
+    }
+
+    resultsActionNotice.textContent = message;
+    resultsActionNotice.classList.toggle("is-success", type === "success");
+    resultsActionNotice.classList.toggle("is-error", type === "error");
+    resultsActionNotice.hidden = false;
   }
 
   function createStatusOption(candidateId, option) {
@@ -379,12 +391,23 @@
       const row = document.createElement("tr");
       const name = document.createElement("th");
       name.scope = "row";
+      const participantActions = document.createElement("div");
+      participantActions.className = "result-participant-actions";
       const editLink = document.createElement("a");
       editLink.className = "result-participant-link";
       editLink.href = getResponsePageUrl(currentEventId, participant.id);
       editLink.textContent = participant.name;
       editLink.setAttribute("aria-label", `${participant.name}さんの回答を編集`);
-      name.append(editLink);
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "result-delete-button";
+      deleteButton.type = "button";
+      deleteButton.textContent = "削除";
+      deleteButton.setAttribute("aria-label", `${participant.name}さんの回答を削除`);
+      deleteButton.addEventListener("click", () => {
+        deleteParticipant(participant, deleteButton);
+      });
+      participantActions.append(editLink, deleteButton);
+      name.append(participantActions);
       row.append(name);
 
       const responseByDateId = new Map(
@@ -415,6 +438,59 @@
     renderResultsTable(results);
     resultsEmptyState.hidden = true;
     resultsContent.hidden = false;
+  }
+
+  async function deleteParticipant(participant, deleteButton) {
+    if (deleteButton.dataset.confirmDelete !== "true") {
+      deleteButton.dataset.confirmDelete = "true";
+      deleteButton.classList.add("is-confirming");
+      deleteButton.textContent = "もう一度押す";
+      deleteButton.setAttribute(
+        "aria-label",
+        `${participant.name}さんの回答を完全に削除`,
+      );
+      showResultsActionNotice(
+        `${participant.name}さんの回答を削除する場合は、もう一度ボタンを押してください。`,
+        "warning",
+      );
+      window.setTimeout(() => {
+        if (deleteButton.isConnected && deleteButton.dataset.confirmDelete === "true") {
+          deleteButton.dataset.confirmDelete = "false";
+          deleteButton.classList.remove("is-confirming");
+          deleteButton.textContent = "削除";
+          deleteButton.setAttribute(
+            "aria-label",
+            `${participant.name}さんの回答を削除`,
+          );
+        }
+      }, 6000);
+      return;
+    }
+
+    deleteButton.dataset.confirmDelete = "false";
+    deleteButton.classList.remove("is-confirming");
+    deleteButton.disabled = true;
+    deleteButton.textContent = "削除中…";
+
+    try {
+      await window.TeamSyncApi.deleteParticipant({
+        eventId: currentEventId,
+        participantId: participant.id,
+      });
+      showResultsActionNotice(`${participant.name}さんの回答を削除しました。`, "success");
+      await loadResults();
+    } catch (error) {
+      const message =
+        error?.code === "PARTICIPANT_NOT_FOUND"
+          ? "削除する回答が見つかりませんでした。結果を更新してください。"
+          : "回答を削除できませんでした。通信環境を確認してもう一度お試しください。";
+      showResultsActionNotice(message, "error");
+    } finally {
+      if (deleteButton.isConnected) {
+        deleteButton.disabled = false;
+        deleteButton.textContent = "削除";
+      }
+    }
   }
 
   async function loadResults() {

@@ -237,6 +237,26 @@
     return result;
   }
 
+  async function deleteParticipant(responseData) {
+    const result = await callRpc("delete_event_participant", {
+      p_event_id: responseData.eventId,
+      p_participant_id: responseData.participantId,
+    });
+
+    if (
+      typeof result !== "object" ||
+      result.deleted !== true ||
+      typeof result.participantId !== "string"
+    ) {
+      throw createApiError(
+        "INVALID_RESPONSE",
+        "Supabaseから回答の削除結果を取得できませんでした。",
+      );
+    }
+
+    return result;
+  }
+
   window.TeamSyncApi = Object.freeze({
     isConfigured,
     createEvent,
@@ -244,5 +264,6 @@
     getEventResults,
     submitResponses,
     updateResponses,
+    deleteParticipant,
   });
 })();
