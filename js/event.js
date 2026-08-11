@@ -13,6 +13,8 @@
   const copyButton = document.querySelector("#copy-url-button");
   const copyLabel = document.querySelector("#copy-url-label");
   const copyStatus = document.querySelector("#copy-status");
+  const responsePageLink = document.querySelector("#response-page-link");
+  const backToResultsLink = document.querySelector("#back-to-results-link");
   const responseForm = document.querySelector("#response-form");
   const participantName = document.querySelector("#participant-name");
   const participantNameCount = document.querySelector("#participant-name-count");
@@ -20,7 +22,7 @@
   const responseFormError = document.querySelector("#response-form-error");
   const submitResponseButton = document.querySelector("#submit-response-button");
   const submitResponseLabel = document.querySelector("#submit-response-button-label");
-  const submitResponseSpinner = submitResponseButton.querySelector(".button-spinner");
+  const submitResponseSpinner = submitResponseButton?.querySelector(".button-spinner");
   const responseNotice = document.querySelector("#response-notice");
   const resultsParticipantCount = document.querySelector("#results-participant-count");
   const refreshResultsButton = document.querySelector("#refresh-results-button");
@@ -48,6 +50,13 @@
 
   function getCanonicalEventUrl(eventId) {
     const url = new URL("event.html", window.location.href);
+    url.search = "";
+    url.searchParams.set("id", eventId);
+    return url.href;
+  }
+
+  function getResponsePageUrl(eventId) {
+    const url = new URL("response.html", window.location.href);
     url.search = "";
     url.searchParams.set("id", eventId);
     return url.href;
@@ -90,11 +99,19 @@
   }
 
   function hideResponseNotice() {
+    if (!responseNotice) {
+      return;
+    }
+
     responseNotice.hidden = true;
     responseNotice.classList.remove("is-success", "is-error");
   }
 
   function showResponseNotice(message, type) {
+    if (!responseNotice) {
+      return;
+    }
+
     responseNotice.textContent = message;
     responseNotice.classList.toggle("is-success", type === "success");
     responseNotice.classList.toggle("is-error", type === "error");
@@ -218,15 +235,29 @@
     description.textContent = eventData.description || "説明はありません。";
     description.classList.toggle("is-empty", !eventData.description);
     candidateCount.textContent = `${eventData.dates.length}件`;
-    shareUrl.textContent = url;
-    shareUrl.title = url;
-    dateList.replaceChildren();
+    if (shareUrl) {
+      shareUrl.textContent = url;
+      shareUrl.title = url;
+    }
 
-    eventData.dates.forEach((candidate, index) => {
-      dateList.append(createResponseCandidate(candidate, index));
-    });
+    if (responsePageLink) {
+      responsePageLink.href = getResponsePageUrl(eventData.id);
+    }
 
-    document.title = `${eventData.title} | TeamSync`;
+    if (backToResultsLink) {
+      backToResultsLink.href = url;
+    }
+
+    if (dateList) {
+      dateList.replaceChildren();
+      eventData.dates.forEach((candidate, index) => {
+        dateList.append(createResponseCandidate(candidate, index));
+      });
+    }
+
+    document.title = responseForm
+      ? `${eventData.title}の出欠を回答 | TeamSync`
+      : `${eventData.title} | TeamSync`;
     loadingState.hidden = true;
     errorState.hidden = true;
     content.hidden = false;
@@ -375,7 +406,7 @@
   }
 
   async function loadResults() {
-    if (!currentEventId || isLoadingResults) {
+    if (!resultsContent || !currentEventId || isLoadingResults) {
       return;
     }
 
@@ -406,6 +437,10 @@
   }
 
   async function copyEventUrl() {
+    if (!shareUrl || !copyLabel || !copyStatus) {
+      return;
+    }
+
     const url = shareUrl.textContent;
 
     try {
@@ -438,6 +473,10 @@
   }
 
   function getSelectedResponses() {
+    if (!dateList) {
+      return [];
+    }
+
     return Array.from(dateList.querySelectorAll("[data-event-date-id]"))
       .map((item) => {
         const selectedStatus = item.querySelector('input[type="radio"]:checked');
@@ -456,6 +495,10 @@
   }
 
   function validateParticipantName() {
+    if (!participantName || !participantNameError) {
+      return false;
+    }
+
     const isValid = participantName.value.trim().length > 0;
     participantName.setAttribute("aria-invalid", String(!isValid));
     participantNameError.textContent = isValid ? "" : "名前を入力してください。";
@@ -463,6 +506,10 @@
   }
 
   function setResponseSubmitting(isSubmitting) {
+    if (!submitResponseButton || !submitResponseLabel || !submitResponseSpinner) {
+      return;
+    }
+
     submitResponseButton.disabled = isSubmitting;
     submitResponseButton.setAttribute("aria-busy", String(isSubmitting));
     submitResponseLabel.textContent = isSubmitting ? "保存しています…" : "回答を保存";
@@ -506,14 +553,18 @@
       }
 
       renderEvent(eventData);
-      await loadResults();
+      if (resultsContent) {
+        await loadResults();
+      }
     } catch {
       showError("イベントを読み込めませんでした。時間をおいてもう一度お試しください。");
     }
   }
 
-  participantName.addEventListener("input", () => {
-    participantNameCount.textContent = `${participantName.value.length} / 40`;
+  participantName?.addEventListener("input", () => {
+    if (participantNameCount) {
+      participantNameCount.textContent = `${participantName.value.length} / 40`;
+    }
 
     if (participantName.getAttribute("aria-invalid") === "true") {
       validateParticipantName();
@@ -522,7 +573,7 @@
     hideResponseNotice();
   });
 
-  responseForm.addEventListener("submit", async (event) => {
+  responseForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const isNameValid = validateParticipantName();
     const responses = getSelectedResponses();
@@ -552,10 +603,10 @@
       });
       const savedName = participantName.value.trim();
       showResponseNotice(
-        `${savedName}さんの回答を${result.savedCount}件保存しました。同じ名前で再回答すると、選択した候補を更新できます。`,
+        `${savedName}さんの回答を${result.savedCount}件保存しました。回答一覧へ移動します…`,
         "success",
       );
-      await loadResults();
+      window.location.assign(getCanonicalEventUrl(currentEventId));
     } catch (error) {
       showResponseNotice(getResponseErrorMessage(error), "error");
     } finally {
@@ -563,7 +614,7 @@
     }
   });
 
-  copyButton.addEventListener("click", copyEventUrl);
-  refreshResultsButton.addEventListener("click", loadResults);
+  copyButton?.addEventListener("click", copyEventUrl);
+  refreshResultsButton?.addEventListener("click", loadResults);
   loadEvent();
 })();
