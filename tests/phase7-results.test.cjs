@@ -21,7 +21,7 @@ const style = fs.readFileSync(
   'id="results-table-head"',
   'id="results-table-body"',
   'id="response-page-link"',
-  'src="js/event.js?v=10"',
+  'src="js/event.js?v=11"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
 
 assert.equal(eventHtml.includes('id="response-form"'), false);
@@ -33,10 +33,13 @@ assert.equal(style.includes(".results-table tfoot"), false);
 assert.match(eventScript, /TeamSyncApi\.getEventResults\(currentEventId\)/);
 assert.match(eventScript, /renderCandidateSummaries\(results\)/);
 assert.match(eventScript, /renderResultsTable\(results\)/);
+assert.match(eventScript, /editLink\.className = "result-participant-link"/);
+assert.match(eventScript, /getResponsePageUrl\(currentEventId, participant\.id\)/);
 assert.match(eventScript, /unansweredCount/);
 assert.match(eventScript, /await loadResults\(\)/);
 assert.match(style, /\.candidate-summary-list/);
 assert.match(style, /\.results-table-scroll/);
+assert.match(style, /\.result-participant-link/);
 assert.match(style, /overflow-x: auto/);
 
 console.log("Phase 7 results page checks passed.");

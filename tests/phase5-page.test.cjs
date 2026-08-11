@@ -31,14 +31,14 @@ const calendarScript = fs.readFileSync(
   'id="response-page-link"',
   "出欠を回答",
   "新しいイベントを作成",
-  'src="js/supabase.js?v=7"',
+  'src="js/supabase.js?v=8"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
 
 [
   'id="event-date-list"',
   'id="response-form"',
   'id="back-to-results-link"',
-  'src="js/event.js?v=10"',
+  'src="js/event.js?v=11"',
 ].forEach((requiredMarkup) => assert.ok(responseHtml.includes(requiredMarkup)));
 
 assert.equal(eventHtml.includes('id="response-form"'), false);

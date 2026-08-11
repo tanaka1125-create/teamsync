@@ -294,6 +294,84 @@ async function testInvalidResponseSubmitResult() {
   );
 }
 
+async function testSuccessfulResponseUpdate() {
+  let capturedRequest;
+  const api = loadApi(
+    {
+      supabaseUrl: "https://example.supabase.co/",
+      supabasePublicKey: "sb_publishable_example",
+    },
+    async (url, options) => {
+      capturedRequest = { url, options };
+      return {
+        ok: true,
+        json: async () => ({
+          participantId: "33333333-3333-4333-8333-333333333333",
+          savedCount: 1,
+        }),
+      };
+    },
+  );
+
+  const result = await api.updateResponses({
+    eventId: "11111111-1111-4111-8111-111111111111",
+    participantId: "33333333-3333-4333-8333-333333333333",
+    responses: [
+      {
+        eventDateId: "22222222-2222-4222-8222-222222222222",
+        status: "no",
+        comment: "  予定が変わりました  ",
+      },
+    ],
+  });
+
+  assert.equal(result.savedCount, 1);
+  assert.equal(
+    capturedRequest.url,
+    "https://example.supabase.co/rest/v1/rpc/update_event_responses",
+  );
+  assert.deepEqual(JSON.parse(capturedRequest.options.body), {
+    p_event_id: "11111111-1111-4111-8111-111111111111",
+    p_participant_id: "33333333-3333-4333-8333-333333333333",
+    p_responses: [
+      {
+        event_date_id: "22222222-2222-4222-8222-222222222222",
+        status: "no",
+        comment: "予定が変わりました",
+      },
+    ],
+  });
+}
+
+async function testDuplicateParticipantError() {
+  const api = loadApi(
+    {
+      supabaseUrl: "https://example.supabase.co",
+      supabasePublicKey: "sb_publishable_example",
+    },
+    async () => ({
+      ok: false,
+      json: async () => ({ message: "PARTICIPANT_NAME_EXISTS" }),
+    }),
+  );
+
+  await assert.rejects(
+    () =>
+      api.submitResponses({
+        eventId: "11111111-1111-4111-8111-111111111111",
+        name: "たなか",
+        responses: [
+          {
+            eventDateId: "22222222-2222-4222-8222-222222222222",
+            status: "yes",
+            comment: "",
+          },
+        ],
+      }),
+    (error) => error.code === "PARTICIPANT_NAME_EXISTS",
+  );
+}
+
 async function testMissingConfiguration() {
   let fetchCalled = false;
   const api = loadApi(
@@ -393,9 +471,12 @@ function testSchemaGuards() {
     /count\(\*\) filter \(where response\.status = 'yes'\)/,
     /create or replace function public\.submit_event_responses/,
     /grant execute on function public\.submit_event_responses\(uuid, text, jsonb\) to anon/,
+    /raise exception 'PARTICIPANT_NAME_EXISTS'/,
+    /create or replace function public\.update_event_responses/,
+    /grant execute on function public\.update_event_responses\(uuid, uuid, jsonb\) to anon/,
+    /delete from public\.responses/,
     /constraint participants_unique_name unique \(event_id, name_key\)/,
     /constraint responses_unique_candidate unique \(participant_id, event_date_id\)/,
-    /on conflict \(participant_id, event_date_id\)/,
     /status text not null check \(status in \('yes', 'maybe', 'no'\)\)/,
     /revoke all on function public\.get_event_details\(uuid\)[\s\S]*from public, authenticated/,
     /grant usage on schema public to anon/,
@@ -415,6 +496,8 @@ async function main() {
   await testInvalidResultsRead();
   await testSuccessfulResponseSubmit();
   await testInvalidResponseSubmitResult();
+  await testSuccessfulResponseUpdate();
+  await testDuplicateParticipantError();
   await testMissingConfiguration();
   await testSupabaseError();
   await testLegacyAnonAuthorization();
