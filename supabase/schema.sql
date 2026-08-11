@@ -1,4 +1,4 @@
--- TeamSync Phase 6 schema
+-- TeamSync Phase 7 schema
 -- Run this entire file once in Supabase Dashboard > SQL Editor.
 
 create extension if not exists pgcrypto;
@@ -192,6 +192,101 @@ grant execute on function public.get_event_details(uuid) to anon;
 
 comment on function public.get_event_details(uuid) is
   'Returns the public TeamSync event fields for a URL-scoped event ID.';
+
+-- Returns only the response data required by the public results table.
+-- The event ID is the unguessable URL scope; direct table access remains revoked.
+create or replace function public.get_event_results(p_event_id uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select jsonb_build_object(
+    'participantCount', (
+      select count(*)
+      from public.participants as participant
+      where participant.event_id = event.id
+    ),
+    'counts', coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'eventDateId', candidate.id,
+            'yesCount', candidate_totals.yes_count,
+            'maybeCount', candidate_totals.maybe_count,
+            'noCount', candidate_totals.no_count,
+            'unansweredCount', greatest(
+              (
+                select count(*)
+                from public.participants as participant
+                where participant.event_id = event.id
+              ) - candidate_totals.response_count,
+              0
+            )
+          )
+          order by candidate.event_date, candidate.start_time, candidate.id
+        )
+        from public.event_dates as candidate
+        left join lateral (
+          select
+            count(*) filter (where response.status = 'yes') as yes_count,
+            count(*) filter (where response.status = 'maybe') as maybe_count,
+            count(*) filter (where response.status = 'no') as no_count,
+            count(*) as response_count
+          from public.responses as response
+          join public.participants as participant
+            on participant.id = response.participant_id
+           and participant.event_id = event.id
+          where response.event_date_id = candidate.id
+        ) as candidate_totals on true
+        where candidate.event_id = event.id
+      ),
+      '[]'::jsonb
+    ),
+    'participants', coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', participant.id,
+            'name', participant.name,
+            'responses', coalesce(
+              (
+                select jsonb_agg(
+                  jsonb_build_object(
+                    'eventDateId', response.event_date_id,
+                    'status', response.status,
+                    'comment', response.comment
+                  )
+                  order by candidate.event_date, candidate.start_time, candidate.id
+                )
+                from public.responses as response
+                join public.event_dates as candidate
+                  on candidate.id = response.event_date_id
+                 and candidate.event_id = event.id
+                where response.participant_id = participant.id
+              ),
+              '[]'::jsonb
+            )
+          )
+          order by participant.name_key, participant.created_at, participant.id
+        )
+        from public.participants as participant
+        where participant.event_id = event.id
+      ),
+      '[]'::jsonb
+    )
+  )
+  from public.events as event
+  where event.id = p_event_id;
+$$;
+
+revoke all on function public.get_event_results(uuid)
+  from public, authenticated;
+grant execute on function public.get_event_results(uuid) to anon;
+
+comment on function public.get_event_results(uuid) is
+  'Returns participant responses and per-candidate counts for a URL-scoped TeamSync event.';
 
 create or replace function public.submit_event_responses(
   p_event_id uuid,
