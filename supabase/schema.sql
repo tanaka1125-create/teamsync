@@ -114,7 +114,9 @@ begin
 end;
 $$;
 
-revoke all on function public.create_event_with_dates(text, text, jsonb) from public;
+revoke all on function public.create_event_with_dates(text, text, jsonb)
+  from public, authenticated;
+grant usage on schema public to anon;
 grant execute on function public.create_event_with_dates(text, text, jsonb) to anon;
 
 comment on function public.create_event_with_dates(text, text, jsonb) is
