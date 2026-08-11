@@ -21,7 +21,7 @@ const createScript = fs.readFileSync(
   'id="event-description"',
   'id="event-date-list"',
   'id="copy-url-button"',
-  'src="js/supabase.js?v=5"',
+  'src="js/supabase.js?v=5.1"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
 
 assert.match(eventScript, /URLSearchParams\(window\.location\.search\)/);
