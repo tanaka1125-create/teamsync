@@ -168,6 +168,8 @@ function testSchemaGuards() {
     /revoke all on table public\.events from anon/,
     /revoke all on table public\.event_dates from anon/,
     /grant execute on function public\.create_event_with_dates/,
+    /grant usage on schema public to anon/,
+    /from public, authenticated/,
     /jsonb_array_length\(p_dates\) not between 1 and 10/,
     /start_time::time >= item\.end_time::time/,
   ];
