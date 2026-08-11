@@ -20,9 +20,11 @@ const style = fs.readFileSync(
   'id="candidate-summary-list"',
   'id="results-table-head"',
   'id="results-table-body"',
-  'src="js/event.js?v=9"',
+  'id="response-page-link"',
+  'src="js/event.js?v=10"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
 
+assert.equal(eventHtml.includes('id="response-form"'), false);
 assert.equal(eventHtml.includes('id="results-table-foot"'), false);
 assert.equal(eventScript.includes('textContent = "集計"'), false);
 assert.equal(eventScript.includes("results-total-cell"), false);

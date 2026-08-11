@@ -4,6 +4,10 @@ const path = require("node:path");
 
 const projectRoot = path.resolve(__dirname, "..");
 const eventHtml = fs.readFileSync(path.join(projectRoot, "event.html"), "utf8");
+const responseHtml = fs.readFileSync(
+  path.join(projectRoot, "response.html"),
+  "utf8",
+);
 const eventScript = fs.readFileSync(
   path.join(projectRoot, "js", "event.js"),
   "utf8",
@@ -23,10 +27,22 @@ const calendarScript = fs.readFileSync(
   'id="event-content"',
   'id="event-title"',
   'id="event-description"',
-  'id="event-date-list"',
   'id="copy-url-button"',
+  'id="response-page-link"',
+  "出欠を回答",
+  "新しいイベントを作成",
   'src="js/supabase.js?v=7"',
 ].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
+
+[
+  'id="event-date-list"',
+  'id="response-form"',
+  'id="back-to-results-link"',
+  'src="js/event.js?v=10"',
+].forEach((requiredMarkup) => assert.ok(responseHtml.includes(requiredMarkup)));
+
+assert.equal(eventHtml.includes('id="response-form"'), false);
+assert.equal(responseHtml.includes('id="results-content"'), false);
 
 const indexHtml = fs.readFileSync(path.join(projectRoot, "index.html"), "utf8");
 [
@@ -52,6 +68,8 @@ assert.match(calendarScript, /dispatchScheduleChange\(\)/);
 assert.match(eventScript, /URLSearchParams\(window\.location\.search\)/);
 assert.match(eventScript, /TeamSyncApi\.getEvent\(eventId\)/);
 assert.match(eventScript, /navigator\.clipboard/);
+assert.match(eventScript, /new URL\("response\.html", window\.location\.href\)/);
+assert.match(eventScript, /responsePageLink\.href = getResponsePageUrl\(eventData\.id\)/);
 assert.match(createScript, /eventUrl\.searchParams\.set\("id", eventId\)/);
 assert.match(createScript, /window\.location\.assign\(eventUrl\.href\)/);
 
