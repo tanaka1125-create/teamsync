@@ -6,6 +6,6 @@
  */
 window.TeamSyncConfig = Object.freeze({
   phase: 4,
-  supabaseUrl: "",
-  supabasePublicKey: "",
+  supabaseUrl: "https://kksguceexfjaluxlhxvn.supabase.co",
+  supabasePublicKey: "sb_publishable_PaXLeR1PC8riCpX3eLe4Yw_T5mbJjOA",
 });
