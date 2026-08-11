@@ -1274,6 +1274,12 @@ input[aria-invalid="true"]:focus {
   margin-bottom: 22px;
 }
 
+.response-name-group input[readonly] {
+  color: #344054;
+  background: #f5f7fa;
+  cursor: default;
+}
+
 .response-date-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
@@ -1673,6 +1679,27 @@ input[aria-invalid="true"]:focus {
 
 .results-table tbody tr:last-child > * {
   border-bottom: 0;
+}
+
+.result-participant-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--color-primary);
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.result-participant-link:hover {
+  color: var(--color-primary-dark);
+}
+
+.result-participant-link:focus-visible {
+  border-radius: 5px;
+  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline-offset: 2px;
 }
 
 .result-status {
