@@ -31,7 +31,6 @@
   const candidateSummaryList = document.querySelector("#candidate-summary-list");
   const resultsTableHead = document.querySelector("#results-table-head");
   const resultsTableBody = document.querySelector("#results-table-body");
-  const resultsTableFoot = document.querySelector("#results-table-foot");
   const UUID_PATTERN =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const STATUS_OPTIONS = [
@@ -356,27 +355,6 @@
       resultsTableBody.append(row);
     });
 
-    const countByDateId = new Map(
-      results.counts.map((count) => [count.eventDateId, count]),
-    );
-    const totalRow = document.createElement("tr");
-    const totalHeading = document.createElement("th");
-    totalHeading.scope = "row";
-    totalHeading.textContent = "集計";
-    totalRow.append(totalHeading);
-    currentEventDates.forEach((candidate) => {
-      const count = countByDateId.get(candidate.id) ?? {
-        yesCount: 0,
-        maybeCount: 0,
-        noCount: 0,
-        unansweredCount: results.participantCount,
-      };
-      const cell = document.createElement("td");
-      cell.className = "results-total-cell";
-      cell.textContent = `○${count.yesCount} △${count.maybeCount} ×${count.noCount} 未${count.unansweredCount}`;
-      totalRow.append(cell);
-    });
-    resultsTableFoot.replaceChildren(totalRow);
   }
 
   function renderResults(results) {
