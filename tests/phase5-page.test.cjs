@@ -12,6 +12,10 @@ const createScript = fs.readFileSync(
   path.join(projectRoot, "js", "create-event.js"),
   "utf8",
 );
+const calendarScript = fs.readFileSync(
+  path.join(projectRoot, "js", "calendar.js"),
+  "utf8",
+);
 
 [
   'id="event-loading"',
@@ -30,6 +34,20 @@ const indexHtml = fs.readFileSync(path.join(projectRoot, "index.html"), "utf8");
   "みんなの予定を、ひとつに。",
   "候補日時を選んで共有するだけ。",
 ].forEach((removedText) => assert.equal(indexHtml.includes(removedText), false));
+
+[
+  'id="bulk-start-time"',
+  'id="bulk-end-time"',
+  'id="apply-bulk-time"',
+  'id="bulk-time-message"',
+  "全候補に反映",
+].forEach((requiredMarkup) => assert.ok(indexHtml.includes(requiredMarkup)));
+
+assert.match(calendarScript, /function applyBulkTime\(\)/);
+assert.match(calendarScript, /candidates\.forEach\(\(candidate\) =>/);
+assert.match(calendarScript, /candidate\.startTime = startTime/);
+assert.match(calendarScript, /candidate\.endTime = endTime/);
+assert.match(calendarScript, /dispatchScheduleChange\(\)/);
 
 assert.match(eventScript, /URLSearchParams\(window\.location\.search\)/);
 assert.match(eventScript, /TeamSyncApi\.getEvent\(eventId\)/);
