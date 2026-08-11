@@ -19,6 +19,9 @@ GitHub Pagesでそのまま公開できる静的サイトです。ログイン�
 - Supabase REST APIによるイベント保存処理
 - 1回の処理でイベントと候補日時を保存するデータベース関数
 - 保存後に `event.html?id=<イベントID>` の専用URLを発行
+- イベント専用URLに回答一覧と「出欠を回答」ボタンを表示
+- `response.html?id=<イベントID>` の回答画面で出欠を入力
+- 回答保存後にイベント専用URLの回答一覧へ自動で戻る
 - 専用URLからイベント名・説明・候補日時を読み込み表示
 - イベント専用URLのコピーボタン
 - 名前と候補ごとの○・△・×による出欠回答
@@ -40,6 +43,7 @@ Supabaseへの接続、イベント保存、専用URLでのイベント表示、
 teamsync/
 ├─ index.html
 ├─ event.html
+├─ response.html
 ├─ css/
 │  └─ style.css
 ├─ js/

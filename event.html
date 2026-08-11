@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="TeamSyncのイベント専用ページです。" />
     <title>イベント | TeamSync</title>
-    <link rel="stylesheet" href="css/style.css?v=9" />
+    <link rel="stylesheet" href="css/style.css?v=10" />
   </head>
   <body>
     <header class="site-header">
@@ -61,58 +61,18 @@
           <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
         </section>
 
-        <section class="card event-dates" aria-labelledby="event-dates-title">
-          <div class="event-section-heading">
-            <div>
-              <p class="step-label">YOUR RESPONSE</p>
-              <h2 id="event-dates-title">出欠を回答</h2>
-            </div>
-            <p>回答する候補だけ選択できます</p>
+        <section class="card response-cta" aria-labelledby="response-cta-title">
+          <div>
+            <p class="step-label">YOUR RESPONSE</p>
+            <h2 id="response-cta-title">日程の回答はこちら</h2>
+            <p>名前と候補日時ごとの○・△・×を入力できます。</p>
           </div>
-
-          <form id="response-form" novalidate>
-            <div class="response-name-group">
-              <label for="participant-name">
-                名前 <span class="required">*</span>
-              </label>
-              <input
-                id="participant-name"
-                name="participantName"
-                type="text"
-                maxlength="40"
-                placeholder="例：たなか"
-                autocomplete="name"
-                aria-describedby="participant-name-hint participant-name-error"
-                required
-              />
-              <div class="field-meta">
-                <p id="participant-name-hint" class="field-hint">
-                  同じ名前で再回答すると、選択した回答を更新します
-                </p>
-                <p id="participant-name-count" class="character-count" aria-hidden="true">
-                  0 / 40
-                </p>
-              </div>
-              <p id="participant-name-error" class="field-error" aria-live="polite"></p>
-            </div>
-
-            <ol id="event-date-list" class="event-date-list"></ol>
-
-            <p class="response-help">
-              ○・△・×のいずれかを選んだ候補だけ保存されます。コメントは候補ごとに任意です。
-            </p>
-            <p id="response-form-error" class="field-error response-form-error" aria-live="polite"></p>
-
-            <button class="primary-button" id="submit-response-button" type="submit">
-              <span class="button-spinner" aria-hidden="true" hidden></span>
-              <span id="submit-response-button-label">回答を保存</span>
-              <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path d="m4 10 4 4 8-8" />
-              </svg>
-            </button>
-
-            <p id="response-notice" class="phase-notice" role="status" aria-live="polite" hidden></p>
-          </form>
+          <a id="response-page-link" class="primary-button response-page-button" href="response.html">
+            <span>出欠を回答</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="m7 4 6 6-6 6" />
+            </svg>
+          </a>
         </section>
 
         <section class="card event-results" aria-labelledby="event-results-title">
@@ -172,6 +132,6 @@
 
     <script src="js/config.js?v=7" defer></script>
     <script src="js/supabase.js?v=7" defer></script>
-    <script src="js/event.js?v=9" defer></script>
+    <script src="js/event.js?v=10" defer></script>
   </body>
 </html>
