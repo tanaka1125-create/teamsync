@@ -11,6 +11,8 @@ const migration = read("supabase/phase8.sql");
 
 assert.ok(event.includes('class="attendance-table"'));
 assert.ok(!event.includes("おすすめ候補"));
+assert.ok(event.includes('js/event.js?v=16'));
+assert.doesNotMatch(script, /best-candidate-note/);
 assert.match(script, /renderAttendanceTable/);
 assert.match(script, /maybeCount \* 0\.5/);
 assert.match(script, /is-best-candidate/);
