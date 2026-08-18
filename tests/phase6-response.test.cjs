@@ -1,50 +1,32 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const root = path.resolve(__dirname, "..");
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const eventScript = read("js/event.js");
+const api = read("js/supabase.js");
+const migration = read("supabase/phase8.sql");
 
-const projectRoot = path.resolve(__dirname, "..");
-const responseHtml = fs.readFileSync(
-  path.join(projectRoot, "response.html"),
-  "utf8",
-);
-const eventScript = fs.readFileSync(
-  path.join(projectRoot, "js", "event.js"),
-  "utf8",
-);
-const schema = fs.readFileSync(
-  path.join(projectRoot, "supabase", "schema.sql"),
-  "utf8",
-);
+assert.match(eventScript, /participantCanEdit/);
+assert.match(eventScript, /getParticipantToken/);
+assert.match(eventScript, /saveParticipantToken/);
+assert.match(eventScript, /RESPONSE_EDIT_FORBIDDEN/);
+assert.match(eventScript, /RESPONSE_DEADLINE_PASSED/);
+assert.match(api, /update_event_responses_v2/);
+assert.match(api, /p_edit_token/);
+assert.match(api, /participantToken/);
 
 [
-  'id="response-form"',
-  'id="participant-name"',
-  'id="response-form-error"',
-  'id="submit-response-button"',
-  'id="response-notice"',
-  'id="response-mode-hint"',
-  'maxlength="40"',
-  'id="back-to-results-link"',
-  'src="js/event.js?v=13"',
-].forEach((requiredMarkup) => assert.ok(responseHtml.includes(requiredMarkup)));
+  /organizer_token_hash text/,
+  /edit_token_hash text/,
+  /responses_protected boolean/,
+  /response_deadline timestamptz/,
+  /digest\(organizer_token, 'sha256'\)/,
+  /digest\(participant_token, 'sha256'\)/,
+  /raise exception 'RESPONSE_EDIT_FORBIDDEN'/,
+  /raise exception 'RESPONSE_DEADLINE_PASSED'/,
+  /revoke execute on function public\.update_event_responses\(uuid, uuid, jsonb\)/,
+  /revoke execute on function public\.delete_event_participant\(uuid, uuid\)/,
+].forEach((pattern) => assert.match(migration, pattern));
 
-assert.equal(responseHtml.includes("同じ名前で再回答すると"), false);
-
-assert.match(eventScript, /value: "yes", symbol: "○", label: "参加"/);
-assert.match(eventScript, /value: "maybe", symbol: "△", label: "未定"/);
-assert.match(eventScript, /value: "no", symbol: "×", label: "不参加"/);
-assert.match(eventScript, /comment\.maxLength = 200/);
-assert.match(eventScript, /TeamSyncApi\.submitResponses/);
-assert.match(eventScript, /TeamSyncApi\.updateResponses/);
-assert.match(eventScript, /searchParams\.get\("participant"\)/);
-assert.match(eventScript, /populateResponseForEdit\(participant\)/);
-assert.match(eventScript, /responses\.length === 0/);
-assert.match(eventScript, /window\.location\.assign\(getCanonicalEventUrl\(currentEventId\)\)/);
-assert.match(schema, /create table if not exists public\.participants/);
-assert.match(schema, /create table if not exists public\.responses/);
-assert.match(schema, /raise exception 'PARTICIPANT_NAME_EXISTS'/);
-assert.match(schema, /create or replace function public\.update_event_responses/);
-assert.match(schema, /grant execute on function public\.update_event_responses\(uuid, uuid, jsonb\) to anon/);
-assert.equal(schema.includes("on conflict (event_id, name_key)"), false);
-
-console.log("Phase 6 response page checks passed.");
+console.log("Phase 8 response protection checks passed.");

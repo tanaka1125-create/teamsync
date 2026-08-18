@@ -8,7 +8,7 @@
       content="TeamSyncは、ゲームチーム向けのシンプルな日程調整ツールです。"
     />
     <title>イベントを作成 | TeamSync</title>
-    <link rel="stylesheet" href="css/style.css?v=8" />
+    <link rel="stylesheet" href="css/style.css?v=15" />
   </head>
   <body>
     <header class="site-header">
@@ -46,6 +46,23 @@
               <p id="event-title-count" class="character-count" aria-hidden="true">0 / 80</p>
             </div>
             <p id="event-title-error" class="field-error" aria-live="polite"></p>
+          </div>
+
+          <div class="creation-options">
+            <div class="form-group">
+              <label for="response-deadline">
+                回答締切 <span class="optional">任意</span>
+              </label>
+              <input id="response-deadline" name="responseDeadline" type="datetime-local" />
+              <p class="field-hint">締切後は新規回答と回答変更を停止します。</p>
+            </div>
+            <label class="check-option" for="responses-protected">
+              <input id="responses-protected" name="responsesProtected" type="checkbox" checked />
+              <span>
+                <strong>回答を保護する</strong>
+                <small>回答したブラウザからだけ変更できます。</small>
+              </span>
+            </label>
           </div>
 
           <div class="form-group">
@@ -119,7 +136,7 @@
                 </span>
                 <div>
                   <span class="calendar-selection-label">選択中の候補</span>
-                  <strong id="selected-count-label">0 / 10件</strong>
+                  <strong id="selected-count-label">0 / 30件</strong>
                 </div>
               </div>
             </div>
@@ -178,7 +195,7 @@
 
             <input id="schedule-data" name="schedule" type="hidden" />
             <p id="schedule-note" class="field-hint schedule-hint">
-              候補日は最大10件、開始・終了時刻は30分刻みで設定できます。
+              候補日は最大30件、開始・終了時刻は30分刻みで設定できます。
             </p>
             <p id="schedule-error" class="field-error" aria-live="polite"></p>
           </fieldset>
@@ -214,9 +231,9 @@
       <p>TeamSync <span aria-hidden="true">·</span> チームの日程調整をシンプルに</p>
     </footer>
 
-    <script src="js/config.js?v=7" defer></script>
-    <script src="js/calendar.js?v=8" defer></script>
-    <script src="js/supabase.js?v=7" defer></script>
-    <script src="js/create-event.js?v=7" defer></script>
+    <script src="js/config.js?v=8" defer></script>
+    <script src="js/calendar.js?v=15" defer></script>
+    <script src="js/supabase.js?v=15" defer></script>
+    <script src="js/create-event.js?v=15" defer></script>
   </body>
 </html>

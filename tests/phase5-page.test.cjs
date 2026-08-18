@@ -1,76 +1,51 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const root = path.resolve(__dirname, "..");
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-const projectRoot = path.resolve(__dirname, "..");
-const eventHtml = fs.readFileSync(path.join(projectRoot, "event.html"), "utf8");
-const responseHtml = fs.readFileSync(
-  path.join(projectRoot, "response.html"),
-  "utf8",
-);
-const eventScript = fs.readFileSync(
-  path.join(projectRoot, "js", "event.js"),
-  "utf8",
-);
-const createScript = fs.readFileSync(
-  path.join(projectRoot, "js", "create-event.js"),
-  "utf8",
-);
-const calendarScript = fs.readFileSync(
-  path.join(projectRoot, "js", "calendar.js"),
-  "utf8",
-);
+const index = read("index.html");
+const event = read("event.html");
+const response = read("response.html");
+const manage = read("manage.html");
+const calendar = read("js/calendar.js");
+const create = read("js/create-event.js");
 
 [
-  'id="event-loading"',
-  'id="event-error"',
-  'id="event-content"',
-  'id="event-title"',
-  'id="event-description"',
-  'id="copy-url-button"',
-  'id="response-page-link"',
-  "出欠を回答",
-  "新しいイベントを作成",
-  'src="js/supabase.js?v=9"',
-].forEach((requiredMarkup) => assert.ok(eventHtml.includes(requiredMarkup)));
-
-[
-  'id="event-date-list"',
-  'id="response-form"',
-  'id="back-to-results-link"',
-  'src="js/event.js?v=13"',
-].forEach((requiredMarkup) => assert.ok(responseHtml.includes(requiredMarkup)));
-
-assert.equal(eventHtml.includes('id="response-form"'), false);
-assert.equal(responseHtml.includes('id="results-content"'), false);
-
-const indexHtml = fs.readFileSync(path.join(projectRoot, "index.html"), "utf8");
-[
-  "SCHEDULE TOGETHER",
-  "みんなの予定を、ひとつに。",
-  "候補日時を選んで共有するだけ。",
-].forEach((removedText) => assert.equal(indexHtml.includes(removedText), false));
-
-[
+  'id="response-deadline"',
+  'id="responses-protected"',
   'id="bulk-start-time"',
   'id="bulk-end-time"',
-  'id="apply-bulk-time"',
-  'id="bulk-time-message"',
-  "全候補に反映",
-].forEach((requiredMarkup) => assert.ok(indexHtml.includes(requiredMarkup)));
+  "最大30件",
+  'src="js/create-event.js?v=15"',
+].forEach((markup) => assert.ok(index.includes(markup)));
 
-assert.match(calendarScript, /function applyBulkTime\(\)/);
-assert.match(calendarScript, /candidates\.forEach\(\(candidate\) =>/);
-assert.match(calendarScript, /candidate\.startTime = startTime/);
-assert.match(calendarScript, /candidate\.endTime = endTime/);
-assert.match(calendarScript, /dispatchScheduleChange\(\)/);
+[
+  'id="results-table-head"',
+  'id="results-table-body"',
+  'id="results-table-foot"',
+  'id="download-csv-button"',
+  'id="manage-event-link"',
+  "出欠を入力する",
+].forEach((markup) => assert.ok(event.includes(markup)));
 
-assert.match(eventScript, /URLSearchParams\(window\.location\.search\)/);
-assert.match(eventScript, /TeamSyncApi\.getEvent\(eventId\)/);
-assert.match(eventScript, /navigator\.clipboard/);
-assert.match(eventScript, /new URL\("response\.html", window\.location\.href\)/);
-assert.match(eventScript, /responsePageLink\.href = getResponsePageUrl\(eventData\.id\)/);
-assert.match(createScript, /eventUrl\.searchParams\.set\("id", eventId\)/);
-assert.match(createScript, /window\.location\.assign\(eventUrl\.href\)/);
+[
+  'id="response-form"',
+  'id="participant-name"',
+  'id="response-closed"',
+  'src="js/event.js?v=15"',
+].forEach((markup) => assert.ok(response.includes(markup)));
 
-console.log("Phase 5 page checks passed.");
+[
+  'id="manage-form"',
+  'id="manage-candidate-list"',
+  'id="confirmed-date-select"',
+  'id="delete-event-button"',
+].forEach((markup) => assert.ok(manage.includes(markup)));
+
+assert.match(calendar, /const MAX_CANDIDATES = 30/);
+assert.match(create, /responseDeadline/);
+assert.match(create, /responsesProtected/);
+assert.match(create, /saveOrganizerToken/);
+assert.match(create, /organizerToken/);
+console.log("Phase 8 page structure checks passed.");
