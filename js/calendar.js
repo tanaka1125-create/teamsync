@@ -1,6 +1,5 @@
 /**
- * TeamSync Phase 3 calendar and candidate-time editor.
- * Event persistence will be connected to Supabase in Phase 4.
+ * TeamSync calendar and candidate-time editor.
  */
 (function initializeCalendar() {
   "use strict";
@@ -12,7 +11,7 @@
     return;
   }
 
-  const MAX_CANDIDATES = 10;
+  const MAX_CANDIDATES = 30;
   const DEFAULT_START_TIME = "20:00";
   const DEFAULT_END_TIME = "22:00";
 

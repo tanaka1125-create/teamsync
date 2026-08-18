@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="TeamSyncの幹事メニューです。" />
+    <title>幹事メニュー | TeamSync</title>
+    <link rel="stylesheet" href="css/style.css?v=15" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">T</span><span>TeamSync</span></a>
+    </header>
+    <main class="page-shell manage-shell">
+      <section id="manage-loading" class="card event-state"><span class="event-loader"></span><p>幹事情報を確認しています…</p></section>
+      <section id="manage-error" class="card empty-state" hidden>
+        <h1>幹事メニューを開けません</h1>
+        <p id="manage-error-message"></p>
+        <a id="manage-error-back" class="secondary-button" href="index.html">イベントページへ戻る</a>
+      </section>
+      <article id="manage-content" hidden>
+        <div class="manage-heading">
+          <div><p class="eyebrow">ORGANIZER</p><h1>幹事メニュー</h1></div>
+          <a id="back-to-event" class="secondary-button" href="event.html">出欠表へ戻る</a>
+        </div>
+
+        <section class="card">
+          <h2>イベント情報を編集</h2>
+          <form id="manage-form">
+            <div class="form-group">
+              <label for="manage-title">イベント名</label>
+              <input id="manage-title" maxlength="80" required />
+            </div>
+            <div class="form-group">
+              <label for="manage-description">メモ</label>
+              <textarea id="manage-description" rows="4" maxlength="500"></textarea>
+            </div>
+            <div class="creation-options">
+              <div class="form-group">
+                <label for="manage-deadline">回答締切</label>
+                <input id="manage-deadline" type="datetime-local" />
+              </div>
+              <label class="check-option" for="manage-protected">
+                <input id="manage-protected" type="checkbox" />
+                <span><strong>回答を保護する</strong><small>回答したブラウザのみ変更可能にします。</small></span>
+              </label>
+            </div>
+
+            <div class="manage-section-heading">
+              <div><h3>候補日時</h3><p>追加・編集・削除・並べ替えができます。</p></div>
+              <button id="add-candidate-button" class="secondary-button" type="button">候補を追加</button>
+            </div>
+            <div id="manage-candidate-list" class="manage-candidate-list"></div>
+
+            <button id="save-event-button" class="primary-button" type="submit">編集内容を保存</button>
+            <p id="manage-notice" class="phase-notice" role="status" hidden></p>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>開催日を確定</h2>
+          <p class="field-hint">確定した候補は出欠表で目立つように表示されます。</p>
+          <div class="confirm-date-controls">
+            <select id="confirmed-date-select"><option value="">未確定</option></select>
+            <button id="confirm-date-button" class="primary-button" type="button">確定状態を保存</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>幹事用URL</h2>
+          <p class="field-hint">このURLを知っている人はイベントを編集・削除できます。参加者には共有しないでください。</p>
+          <div class="share-panel compact-share-panel">
+            <p id="admin-url" class="share-url"></p>
+            <button id="copy-admin-url" class="copy-button" type="button">幹事用URLをコピー</button>
+          </div>
+        </section>
+
+        <section class="card danger-zone">
+          <h2>イベントを削除</h2>
+          <p>出欠とコメントを含むすべてのデータが削除され、元に戻せません。</p>
+          <button id="delete-event-button" class="danger-button" type="button">イベントを削除</button>
+        </section>
+      </article>
+    </main>
+    <footer class="site-footer"><p>TeamSync · チームの日程調整をシンプルに</p></footer>
+    <script src="js/config.js?v=8" defer></script>
+    <script src="js/supabase.js?v=15" defer></script>
+    <script src="js/manage-event.js?v=15" defer></script>
+  </body>
+</html>

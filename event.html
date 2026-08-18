@@ -3,143 +3,112 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="TeamSyncのイベント専用ページです。" />
-    <title>イベント | TeamSync</title>
-    <link rel="stylesheet" href="css/style.css?v=14" />
+    <meta name="description" content="TeamSyncの出欠表です。" />
+    <title>出欠表 | TeamSync</title>
+    <link rel="stylesheet" href="css/style.css?v=15" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="index.html" aria-label="TeamSync ホーム">
-        <span class="brand-mark" aria-hidden="true">T</span>
-        <span>TeamSync</span>
+        <span class="brand-mark" aria-hidden="true">T</span><span>TeamSync</span>
       </a>
+      <a class="header-create-link" href="index.html">新しい出欠表をつくる</a>
     </header>
 
     <main class="page-shell event-page-shell">
       <section id="event-loading" class="card event-state" aria-live="polite">
-        <span class="event-loader" aria-hidden="true"></span>
-        <p>イベント情報を読み込んでいます…</p>
+        <span class="event-loader" aria-hidden="true"></span><p>出欠表を読み込んでいます…</p>
       </section>
 
-      <section id="event-error" class="card empty-state" aria-labelledby="event-error-title" hidden>
-        <span class="calendar-icon calendar-icon--large" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M7 2v3M17 2v3M3.5 9h17M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-            <path d="m8 15 2.2 2.2L16.5 11" />
-          </svg>
-        </span>
-        <p class="eyebrow">EVENT PAGE</p>
-        <h1 id="event-error-title">イベントを表示できません</h1>
-        <p id="event-error-message" class="intro-copy"></p>
-        <a class="secondary-button" href="index.html">新しいイベントを作成</a>
+      <section id="event-error" class="card empty-state" hidden>
+        <p class="eyebrow">EVENT</p>
+        <h1>イベントを表示できません</h1>
+        <p id="event-error-message"></p>
+        <a class="secondary-button" href="index.html">新しい出欠表をつくる</a>
       </section>
 
-      <article id="event-content" class="event-content" aria-labelledby="event-title" hidden>
-        <section class="card event-summary">
-          <div class="event-summary-heading">
+      <article id="event-content" class="event-content" hidden>
+        <section class="event-header-card card">
+          <div class="event-title-row">
             <div>
-              <p class="eyebrow">EVENT</p>
+              <p class="eyebrow">みんなの予定を合わせよう</p>
               <h1 id="event-title"></h1>
             </div>
-            <span class="event-candidate-badge" id="event-candidate-count"></span>
+            <a id="manage-event-link" class="organizer-button" href="manage.html" hidden>幹事メニュー</a>
           </div>
           <p id="event-description" class="event-description"></p>
+          <div id="confirmed-banner" class="confirmed-banner" hidden>
+            <strong>開催日が決まりました</strong>
+            <span id="confirmed-date"></span>
+          </div>
+          <p id="deadline-status" class="deadline-status"></p>
 
-          <div class="share-panel">
+          <div class="share-panel compact-share-panel">
             <div>
-              <span class="share-label">イベント専用URL</span>
+              <span class="share-label">参加者へこのURLを共有してください</span>
               <p id="share-url" class="share-url"></p>
             </div>
             <button id="copy-url-button" class="copy-button" type="button">
-              <svg viewBox="0 0 20 20" aria-hidden="true">
-                <rect x="6" y="6" width="10" height="10" rx="2" />
-                <path d="M13 6V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h1" />
-              </svg>
               <span id="copy-url-label">URLをコピー</span>
             </button>
           </div>
           <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
         </section>
 
-        <section class="card response-cta" aria-labelledby="response-cta-title">
-          <div>
-            <p class="step-label">YOUR RESPONSE</p>
-            <h2 id="response-cta-title">日程の回答はこちら</h2>
-            <p>名前と候補日時ごとの○・△・×を入力できます。</p>
-          </div>
+        <section class="event-primary-actions">
           <a id="response-page-link" class="primary-button response-page-button" href="response.html">
-            <span>出欠を回答</span>
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-              <path d="m7 4 6 6-6 6" />
-            </svg>
+            出欠を入力する
           </a>
+          <button id="download-csv-button" class="secondary-button" type="button">CSVダウンロード</button>
         </section>
 
-        <section class="card event-results" aria-labelledby="event-results-title">
-          <div class="event-section-heading results-heading">
+        <section class="card attendance-card" aria-labelledby="event-results-title">
+          <div class="attendance-heading">
             <div>
-              <p class="step-label">RESULTS</p>
-              <h2 id="event-results-title">回答一覧</h2>
+              <p class="step-label">ATTENDANCE</p>
+              <h2 id="event-results-title">出欠表</h2>
             </div>
-            <div class="results-heading-actions">
-              <p id="results-participant-count">0人が回答</p>
-              <button id="refresh-results-button" class="refresh-results-button" type="button">
-                結果を更新
-              </button>
+            <div class="attendance-meta">
+              <strong id="results-participant-count">0人が回答</strong>
+              <button id="refresh-results-button" class="text-button" type="button">最新の状態に更新</button>
             </div>
+          </div>
+
+          <div id="best-candidate-note" class="best-candidate-note" hidden>
+            <span aria-hidden="true">★</span>
+            <p><strong>おすすめ候補</strong> ○を1点、△を0.5点として最も点数が高い日程です。</p>
           </div>
 
           <div id="results-loading" class="results-state" role="status" aria-live="polite">
-            <span class="event-loader" aria-hidden="true"></span>
-            <p>回答結果を読み込んでいます…</p>
+            <span class="event-loader" aria-hidden="true"></span><p>回答を集計しています…</p>
           </div>
-
-          <div id="results-error" class="results-state results-state--error" role="status" hidden>
-            <p>回答結果を読み込めませんでした。「結果を更新」をお試しください。</p>
+          <div id="results-error" class="results-state results-state--error" hidden>
+            <p>回答結果を読み込めませんでした。</p>
           </div>
-
-          <p
-            id="results-action-notice"
-            class="phase-notice results-action-notice"
-            role="status"
-            aria-live="polite"
-            hidden
-          ></p>
-
+          <p id="results-action-notice" class="phase-notice" role="status" aria-live="polite" hidden></p>
           <div id="results-empty" class="results-empty" hidden>
             <strong>まだ回答はありません</strong>
-            <p>最初の回答が保存されると、候補別の集計と回答一覧が表示されます。</p>
+            <p>「出欠を入力する」から最初の回答を登録してください。</p>
           </div>
 
           <div id="results-content" hidden>
-            <div
-              id="candidate-summary-list"
-              class="candidate-summary-list"
-              aria-label="候補日時ごとの回答集計"
-            ></div>
-
-            <div class="results-table-scroll" tabindex="0" aria-label="参加者ごとの回答一覧">
-              <table class="results-table">
-                <caption>参加者ごとの○・△・×とコメント</caption>
+            <div class="attendance-table-scroll" tabindex="0" aria-label="候補日時と参加者の出欠表">
+              <table class="attendance-table">
+                <caption>候補日時ごとの出欠とコメント</caption>
                 <thead id="results-table-head"></thead>
                 <tbody id="results-table-body"></tbody>
+                <tfoot id="results-table-foot"></tfoot>
               </table>
             </div>
+            <p class="table-help">名前を選ぶと回答を変更できます。回答保護中は回答したブラウザのみ編集できます。</p>
           </div>
         </section>
-
-        <div class="event-page-actions">
-          <a class="secondary-button" href="index.html">新しいイベントを作成</a>
-        </div>
       </article>
     </main>
 
-    <footer class="site-footer">
-      <p>TeamSync <span aria-hidden="true">·</span> チームの日程調整をシンプルに</p>
-    </footer>
-
-    <script src="js/config.js?v=7" defer></script>
-    <script src="js/supabase.js?v=9" defer></script>
-    <script src="js/event.js?v=13" defer></script>
+    <footer class="site-footer"><p>TeamSync · チームの日程調整をシンプルに</p></footer>
+    <script src="js/config.js?v=8" defer></script>
+    <script src="js/supabase.js?v=15" defer></script>
+    <script src="js/event.js?v=15" defer></script>
   </body>
 </html>

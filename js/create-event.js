@@ -12,6 +12,8 @@
   const titleError = form.querySelector("#event-title-error");
   const titleCount = form.querySelector("#event-title-count");
   const descriptionCount = form.querySelector("#event-description-count");
+  const responseDeadlineInput = form.querySelector("#response-deadline");
+  const responsesProtectedInput = form.querySelector("#responses-protected");
   const scheduleError = form.querySelector("#schedule-error");
   const phaseNotice = form.querySelector("#phase-notice");
   const submitButton = form.querySelector("#create-event-button");
@@ -153,16 +155,22 @@
     hideNotice();
 
     try {
-      const eventId = await window.TeamSyncApi.createEvent({
+      const result = await window.TeamSyncApi.createEvent({
         title: titleInput.value,
         description: descriptionInput.value,
         candidates: window.TeamSyncCalendar.getCandidates(),
+        responseDeadline: responseDeadlineInput.value
+          ? new Date(responseDeadlineInput.value).toISOString()
+          : null,
+        responsesProtected: responsesProtectedInput.checked,
       });
 
-      form.dataset.eventId = eventId;
-      showNotice("イベントを保存しました。専用ページへ移動します…", "success");
+      form.dataset.eventId = result.eventId;
+      window.TeamSyncSecrets.saveOrganizerToken(result.eventId, result.organizerToken);
+      showNotice("出欠表を作成しました。イベントページへ移動します…", "success");
       const eventUrl = new URL("event.html", window.location.href);
-      eventUrl.searchParams.set("id", eventId);
+      eventUrl.searchParams.set("id", result.eventId);
+      eventUrl.hash = new URLSearchParams({ admin: result.organizerToken }).toString();
       window.location.assign(eventUrl.href);
     } catch (error) {
       showNotice(getSaveErrorMessage(error), "error");

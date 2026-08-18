@@ -5,7 +5,7 @@
  * Never place a service-role key in this client-side file.
  */
 window.TeamSyncConfig = Object.freeze({
-  phase: 7,
+  phase: 8,
   supabaseUrl: "https://kksguceexfjaluxlhxvn.supabase.co",
   supabasePublicKey: "sb_publishable_PaXLeR1PC8riCpX3eLe4Yw_T5mbJjOA",
 });
