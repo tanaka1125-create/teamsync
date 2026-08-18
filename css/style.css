@@ -2181,21 +2181,6 @@ body {
   text-decoration: underline;
 }
 
-.best-candidate-note {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 18px 24px 0;
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: var(--sheet-best);
-  color: #6c5611;
-}
-
-.best-candidate-note p {
-  margin: 0;
-}
-
 .attendance-table-scroll {
   overflow: auto;
   padding: 20px 24px 24px;
