@@ -274,8 +274,6 @@
     const counts = new Map(results.counts.map((item) => [item.eventDateId, item]));
     const scores = results.counts.map((item) => Number(item.score ?? (item.yesCount + item.maybeCount * 0.5)));
     const maxScore = results.participantCount > 0 ? Math.max(...scores, 0) : -1;
-    el("#best-candidate-note").hidden = maxScore <= 0;
-
     const header = document.createElement("tr");
     const schedule = document.createElement("th");
     schedule.scope = "col";

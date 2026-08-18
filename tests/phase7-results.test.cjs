@@ -10,7 +10,7 @@ const style = read("css/style.css");
 const migration = read("supabase/phase8.sql");
 
 assert.ok(event.includes('class="attendance-table"'));
-assert.ok(event.includes('id="best-candidate-note"'));
+assert.ok(!event.includes("おすすめ候補"));
 assert.match(script, /renderAttendanceTable/);
 assert.match(script, /maybeCount \* 0\.5/);
 assert.match(script, /is-best-candidate/);
